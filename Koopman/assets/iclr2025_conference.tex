@@ -1,0 +1,2436 @@
+
+\documentclass{article} % For LaTeX2e
+\usepackage{iclr2025_conference,times}
+
+% Optional math commands from https://github.com/goodfeli/dlbook_notation.
+\input{math_commands.tex}
+
+\usepackage{tikz}
+\usepackage{tikz-cd}
+\usepackage[
+  colorlinks=true,
+  linkcolor=cyan,
+  citecolor=cyan
+]{hyperref}
+\usepackage{url}
+\usepackage{amsmath}
+\usepackage{mathtools}
+\usepackage{booktabs}
+\usepackage{amsmath,amssymb}
+\usepackage{algorithm}
+% \usepackage{algpseudocode}
+\usepackage{algorithmic} 
+
+\usepackage{amssymb}
+\usepackage{array} 
+\usepackage{booktabs}
+\usepackage{tabularx}
+% \usepackage{amsmath} % for math
+\usepackage{array}
+\usepackage{float}
+\usepackage{xcolor}
+\definecolor{slowcolor}{HTML}{1f77b4}      % 蓝色
+% \definecolor{fastcolor}{HTML}{ff7f0e}      % 橙色
+\definecolor{confoundcolor}{HTML}{d62728}  % 红色
+\definecolor{fastcolor}{HTML}{17BECF}
+\definecolor{softred}{RGB}{255, 230, 230}
+\definecolor{softblue}{RGB}{230, 240, 255}
+\usepackage{multirow}
+
+\usepackage{colortbl}
+\usepackage[table]{xcolor}
+\definecolor{best}{RGB}{198,239,206}  
+\definecolor{second}{RGB}{221,235,247}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{claim}{Claim}[section]
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{assumption}[theorem]{Assumption}
+
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{fact}[theorem]{Fact}
+
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{caption}
+\captionsetup[subfigure]{labelformat=empty}
+
+\usepackage{mdframed}
+\usepackage{cancel}
+
+
+\newmdtheoremenv[
+  backgroundcolor=white!95!red!5,
+  linecolor=blue!40!pink,
+  linewidth=1pt,
+  roundcorner=6pt,
+  innertopmargin=5pt,
+  innerbottommargin=5pt,
+  innerrightmargin=10pt,
+  innerleftmargin=10pt,
+  frametitlebackgroundcolor=blue!10,
+  frametitleaboveskip=2pt,
+  frametitlebelowskip=2pt,
+  frametitlefont=\bfseries,
+  % shadow=true,
+  % shadowsize=3pt,
+  shadowcolor=black!15,
+  skipabove=1pt,
+  skipbelow=1pt
+]{claimwithframe}{Proposition}
+
+
+
+\newmdtheoremenv[
+  backgroundcolor=gray!5,
+  linecolor=blue!40!pink, 
+  linewidth=0.5pt,
+  roundcorner=4pt,
+  innertopmargin=6pt,
+  innerbottommargin=6pt,
+  innerleftmargin=8pt,
+  innerrightmargin=8pt,
+]{proofwithframe}{Proof}
+
+\title{Information Shapes Koopman Representation}
+
+\author{\textbf{Xiaoyuan Cheng}$^{1}$\thanks{Email Xiaoyuan Cheng and Wenxuan Yuan to \url{ucesxc4@ucl.ac.uk} and \url{wenxuan.yuan@qq.com}.} \quad
+\textbf{Wenxuan Yuan}$^{2 *}$ \quad
+\textbf{Yiming Yang}$^{1}$ \quad
+\textbf{Yuanzhao Zhang}$^{3}$ \\
+\textbf{Sibo Cheng}$^{4}$ \quad
+\textbf{Yi He}$^{1}$ \quad
+\textbf{Zhuo Sun}$^{5,6}$\thanks{Corresponding Author. Corresponding to Zhuo Sun: \url{sunzhuo@mail.shufe.edu.cn}.} \\
+\\
+$^{1}$Dynamic Systems Lab, University College London \\ 
+$^{2}$Department of Earth Science and Engineering, Imperial College London \\ 
+$^{3}$Santa Fe Institute \\ 
+$^{4}$CEREA, ENPC and EDF R\&D, Institut Polytechnique de Paris \\
+$^{5}$School of Statistics and Data Science, Shanghai University of Finance and Economics\\ 
+$^{6}$Institute of Big Data Research, Shanghai University of Finance and Economics\\
+$*$ \textit{\underline{Xiaoyuan Cheng} and \underline{Wenxuan Yuan} contributed equally to this work.}
+}
+
+
+
+
+% The \author macro works with any number of authors. There are two commands
+% used to separate the names and addresses of multiple authors: \And and \AND.
+%
+% Using \And between authors leaves it to \LaTeX{} to determine where to break
+% the lines. Using \AND forces a linebreak at that point. So, if \LaTeX{}
+% puts 3 of 4 authors names on the first line, and the last on the second
+% line, try using \AND instead of \And before the third author name.
+
+\newcommand{\fix}{\marginpar{FIX}}
+\newcommand{\new}{\marginpar{NEW}}
+\newcommand{\zs}[1]{\textcolor{blue}{[ZS: #1]}}
+\newcommand{\wy}[1]{\textcolor{blue}{[WX: #1]}}
+
+%\iclrfinalcopy % Uncomment for camera-ready version, but NOT for submission.
+\iclrfinalcopy
+\begin{document}
+
+
+\maketitle
+
+\begin{abstract}
+% The Koopman operator offers a powerful framework for representing and modeling dynamical systems, and has gained significant attention in deep learning over the past decade. 
+% % However, its inherently infinite-dimensional nature poses a fundamental challenge: selecting a suitable finite-dimensional subspace. 
+% However, its inherently infinite-dimensional nature poses a fundamental challenge: the identification of a suitable finite-dimensional subspace. 
+% This task becomes particularly difficult when using deep architectures. In practice, the subspaces learned by (variational) autoencoders are often unstable or hard to interpret, limiting the reliability of the learned models. 
+% % We argue that these pathological behaviors are fundamentally from bad representation learning, where the latent variables fail to balance expressivity and simplicity.
+% We argue that these behaviors are rooted in bad representation learning, where the latent variables fail to balance expressivity and simplicity.
+The Koopman operator provides a powerful framework for modeling dynamical systems and has attracted growing interest from the machine learning community.
+However, its infinite-dimensional nature makes identifying suitable finite-dimensional subspaces challenging, especially for deep architectures.
+We argue that these difficulties come from suboptimal representation learning, where latent variables fail to balance expressivity and simplicity.
+This tension is closely related to the information bottleneck (IB) dilemma: constructing compressed representations that are both compact and predictive. Rethinking Koopman learning through this lens, we demonstrate that latent mutual information promotes simplicity, yet an overemphasis on simplicity may cause latent space to collapse onto a few dominant modes. In contrast, expressiveness is sustained by the von Neumann entropy, which prevents such collapse and encourages mode diversity. This insight leads us to propose an information-theoretic Lagrangian formulation that explicitly balances this tradeoff. Furthermore, we propose a new algorithm based on the Lagrangian formulation that encourages both simplicity and expressiveness, leading to a stable and interpretable Koopman representation. Beyond quantitative evaluations, we further visualize the learned manifolds under our representations, observing empirical results consistent with our theoretical predictions. Finally, we validate our approach across a diverse range of dynamical systems, demonstrating improved performance over existing Koopman learning methods. The implementation is publicly available at \url{https://github.com/Wenxuan52/InformationKoopman}.
+\end{abstract}
+% Interesting and novel idea, but I feel like the writing is showing a really torturous logic to follow.
+
+\section{Introduction}
+Modeling and predicting the behavior of nonlinear dynamical systems are fundamental problems in science and engineering \citep{brunton2020machine, kovachki2023neural, mezic2020koopman}. Classical approaches typically rely on nonlinear differential equations or black-box learning methods. In contrast, the Koopman operator framework offers a compelling alternative: it represents nonlinear evolution as a linear transformation in an appropriate function space \citep{koopman1931hamiltonian, fritz1995john}.
+
+\textbf{Motivation.} This linearization principle has recently attracted significant attention in the deep learning community, as it enables complex nonlinear dynamics to be modeled and predicted using linear representations. However, integrating this framework into deep architectures poses a fundamental challenge: the Koopman operator is inherently infinite-dimensional, necessitating the identification or learning of a suitable finite-dimensional subspace for practical implementation. Deep learning models, most notably variational autoencoders (VAEs), have been employed to approximate such subspaces in a purely data-driven manner \citep{otto2019linearly, pan2020physics, liu2023koopa}. Yet in practice, the resulting representations often suffer from instability, mode collapse or fail to produce reliable dynamics. To address these challenges, some studies incorporate domain-specific priors—such as symmetry, conservation laws, dissipation, or ergodicity \citep{vaidya2008lyapunov, weissenbacher2022koopman, azencot2020forecasting, cheng2025learning}—into the Koopman representation. While effective in restricted settings, such approaches lack general principles for guiding Koopman representation. This calls for a more general and principled approach to constructing finite-dimensional representations, one that balances simplicity, in the form of latent linearity, with sufficient expressiveness (more literature review in Appendix~\ref{append:more_literature_review}). 
+
+
+\textbf{Information Bottleneck View.} A natural way to achieve the tradeoff between simplicity and expressiveness is through the lens of the Information Bottleneck (IB). The classic IB framework formalizes the idea that a good representation should compress the input as much as possible while preserving information relevant to a downstream task \citep{tishby2000information, tishby2015deep}. In the context of representation learning (see Table \ref{tab:rep_comparison}), this typically means finding a latent variable $z$ that minimizes $\text{Complexity}(x, z)$\footnote{By Complexity$(x,z)$ we mean the mutual information $I(x;z)$ in the IB framework,  quantifying how much of the input information $x$ is retained in $z$. Relevance$(z,y)$ denotes $I(z;y)$, the information $z$ carries about $y$. } from input $x$, while retaining expressiveness by improving Relevance$(z, y)$ \citep{vera2018role}. Instead of a static latent representation, the goal of Koopman representation is to predict the future state $x_{n}$ given the current state $x_{n-1}$ via a latent variable $z_{n-1}$. This gives rise to a dynamical information bottleneck formulation: we aim to learn a Koopman representation $z_{n-1}$ with maximal linear predictability of future state $x_{n}$, while remaining as compact as possible.
+
+\vspace{-0.5em}
+\begin{table}[h]
+\centering
+\scriptsize
+\renewcommand{\arraystretch}{0.99} 
+\setlength{\tabcolsep}{8pt} 
+\caption{
+Information-theoretic comparison between standard and Koopman representations. Here, $\beta$ controls the trade-off between simplicity and future-state expressiveness.
+}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+ & \textbf{Latent Representation} & \textbf{Koopman Representation} \\
+ \hline
+\textbf{Goal} 
+  & Disentangled $z$ 
+  & Predictive $z_{n-1}$ \\
+\textbf{Info. Flow} 
+  & $x \!\to\! z \!\to\! y$ 
+  & $x_{n-1} \!\to\! z_{n-1} \xrightarrow{\text{Koopman operator}} z_{n} \!\to\! x_{n}$ \\
+\textbf{Lagrangian} 
+  & \colorbox{softred}{\strut $\beta \, \text{Complexity}(x, z)$} $-$ 
+    \colorbox{softblue}{\strut $\text{Relevance}(z, y)$} 
+  & \colorbox{softred}{\strut $\beta \, \text{Complexity}(x_{n-1}, z_{n-1})$} $-$ 
+    \colorbox{softblue}{\strut $\text{Relevance}(z_{n-1}, x_{n})$} \\
+\bottomrule
+\end{tabular}
+\label{tab:rep_comparison}
+\vspace{-0.8em}
+\end{table}
+
+
+\textbf{Why Is Finding a Good Koopman Representation Challenging?} Learning Koopman representation imposes stricter constraints than conventional latent representation models (see Table \ref{tab:rep_comparison}). In VAE or $\beta-$VAE \citep{kingma2013auto, burgess2018understanding}, the focus is on reconstructing the input $x$ or sampling from its distribution, which only requires the latent representation $z$ to contain enough information about $y$. However, in Koopman learning, the latent space needs to support linear forward from $z_n$ to $z_{n+1}$ in some finite-dimensional spaces. 
+This constraint implies that the latent representation must not only capture information about the current state but also conform to a linear predictive structure (\textit{structural consistency}) \citep{mardt2018vampnets, kostic2023sharp, kostic2023learning, kostic2024consistent}, which imposes a stronger restriction. Prior work has shown that simply increasing the dimensions of the latent space does not necessarily improve performance \citep{li2019learning, brunton2021modern}, underscoring the importance of maintaining \textit{temporal coherence}, i.e., ensuring that latent trajectories evolve consistently over time to prevent instability and error accumulation. Moreover, \textit{predictive sufficiency} requires that the latent representation retains enough Koopman modes to faithfully reconstruct the system’s future trajectories, such that multi-step prediction accuracy is preserved \citep{wang2022rethinking, wang2025rethinking}. Unlike standard VAEs and their variants, which emphasize flexible latent representations to support reconstruction, Koopman models demand dynamically consistent latent representations: small deviations can propagate and amplify over time. In summary, while conventional representation learning emphasizes disentanglement and reconstruction, Koopman representation learning requires three key properties: temporal coherence, predictive sufficiency, and structural consistency.
+% This constraint means the latent representation must not only capture information about the current state, but also align with a linear predictive structure (structural consistency), which is significantly more rigid. As shown in previous work, naively increasing the dimension of the latent space does not always improve performance \citep{li2019learning, brunton2021modern}, which highlights the need for improving latent temporal coherence. Moreover, such a latent space needs to preserve fine-grained features relevant to long-term multi-step prediction, which further requires the sufficient mode preservation (predictive sufficiency). While standard VAE or its variants emphasize flexible latent representations to support reconstruction, Koopman model demands a dynamically consistent latent representation, as small errors can propagate and amplify over time. In summary, while conventional representation learning emphasizes disentanglement and reconstruction, Koopman representation learning demands \textit{temporal coherence}, \textit{predictive sufficiency}, and \textit{structural consistency}.
+The IB framework provides a meta view to navigate these trade-offs. It enables us to ask the central question:
+\begin{center}
+% \vspace{-0.8em}
+\textit{Is it possible to learn Koopman representations that are both structurally simple and expressive, under the guidance of information-theoretic principles?}
+% \vspace{-0.8em}
+\end{center}
+Motivated by this question, we approach the problem from a fresh IB perspective, leading to core contributions: \textbf{Theoretical Insight.} We develop an information-theoretic framework for Koopman representation, proving that mutual information controls error bounds while von Neumann entropy determines the effective dimension. By disentangling the information content of Koopman representations, we reveal how temporal coherence, predictive sufficiency, and structural consistency are governed by latent information and how these components are intrinsically connected to the spectral properties of the Koopman operator. This yields a novel information-theoretic Lagrangian that extends the classical IB principle by explicitly incorporating dynamical constraints, thereby making the fundamental trade-off between simplicity and expressivity in Koopman representation mathematically explicit. 
+% (1) \textbf{Theoretical Insight}. We provide a new information-theoretic analysis of Koopman representation, where we prove the mutual information determines the error bounds. Moreover, we connect the information with spectral properties of Koopman operator through disentangling the total information of Koopman representation. We find 
+% showing that three fundamental criteria—temporal coherence, predictive sufficiency, and structural consistency—are governed by latent mutual information and Von Neumann entropy. By disentangling the different information components in the Koopman representation, we connect information with the spectral properties of Koopman operator. This analysis yields a novel information-theoretic Lagrangian that moves beyond the classic IB principle through the explicit incorporation of dynamical constraints. It makes the fundamental trade-off between simplicity and expressiveness in Koopman representation explicit.
+\textbf{Principled Framework.} Building on our information-theoretic Lagrangian, we derive a tractable, architecture-agnostic loss function that translates our theory into a practical algorithm. Each term of the loss corresponds directly to one of the three desiderata—temporal coherence, predictive sufficiency, and structural consistency. This yields a general algorithm that is broadly applicable: it extends naturally from physical dynamical systems to high-dimensional visual inputs and graph-structured dynamics, and our empirical results validate the theoretical predictions. 
+ 
+
+
+
+
+\section{Preliminaries}
+
+\textbf{Notation.} 
+Let $\mathcal{M} \subset \mathbb{R}^n$ be a finite-dimensional manifold equipped with a measure $\mu$.  Consider a discrete-time nonlinear map $T: \mathcal{M} \to \mathcal{M}$, so that the state $x_t \in \mathcal{M}$ evolves according to $ x_t = T(x_{t-1})$.  We denote by $\mathcal{H} = L^2(\mathcal{M}, \mu)$, the Hilbert space of real-valued observables $\phi : \mathcal{M} \to \mathbb{R}$.
+
+\begin{definition}[Koopman Operator \citep{koopman1931hamiltonian}] \label{Def:Koopman}
+The \emph{Koopman operator} $\mathcal{K}: \mathcal{H} \to \mathcal{H}$ is a linear operator acting on observables as
+\begin{equation} \label{def:koopman_operator}
+    (\mathcal{K}\phi)(x) = \phi(T(x)), \quad \text{for} \ \phi \in \mathcal{H}, \; x \in \mathcal{M}.
+\end{equation}
+\end{definition}
+Despite the appeal of lifting nonlinear dynamics into a linear forward via Koopman representation, practical approximations require projecting the infinite-dimensional function space \( \mathcal{H} \) onto a finite-dimensional subspace. In the Koopman learning framework, this restriction manifests as learning a finite set of effective latent features \( \{ \phi_1, \phi_2, \dots, \phi_d \} \) that map the state \( x \) as a latent representation \( z \coloneqq \phi(x) \in Z \subsetneq \mathcal{H} \), where \( Z \) is the latent space spanned by the selected latent features. The center of this paper is on discussion how to find a good representation $z$.  To ground the principles of information theory, we introduce some essential technical definitions. 
+
+\begin{definition}[Mutual Information \citep{mackay2003information}] \label{def:mutual_info}
+Given two random variables \(x\) and \(y\) with joint probability distribution \(p(x,y)\) and marginal distributions \(p(x)\) and \(p(y)\), the \emph{mutual information} \(I(x;y)\) quantifies the amount of information shared between \(x\) and \(y\), and is defined as
+\[
+I(x;y) = \mathbb{E} [\log \frac{p(x,y)}{p(x) p(y)} ] = \mathbb{E} [\log \frac{p(y| x)}{p(y)} ].
+\]
+\end{definition}
+
+
+\begin{definition}[Von Neumann Entropy \citep{witten2020mini}] \label{Effective Dimension}
+Let \( \rho \in \mathbb{R}^{d \times d} \) be a symmetric, positive semidefinite matrix with trace \(1\).  
+The \emph{von Neumann entropy} of \( \rho \) is defined as
+\[
+S(\rho) \;=\; - \mathrm{tr}\!\left(\rho \, \log \rho \right).
+\]
+If \(\{\lambda_i\}_{i=1}^d\) are the eigenvalues of \(\rho\), then $S(\rho) = - \sum_{i=1}^d \lambda_i \log \lambda_i$. This value reflects latent effective dimensions: it is close to \(0\) if \( \rho \) is concentrated on a single direction, and close to \(\log d\) if \( \rho \) is spread uniformly. More connection with effective dimension is given in Appendix \ref{append:def_and_prop}. 
+\end{definition}
+
+Intuitively, mutual information and the von Neumann entropy provide a principled way to measure the predictability and the intrinsic effective dimension of Koopman representation. Building on these preliminaries, we can quantify the preserved information under Koopman representation.
+
+\section{Method}\label{sec:method}
+
+Our approach proceeds as:  
+(1) a probabilistic analysis in Koopman representation how information loss drives error accumulation;
+(2) an information-theoretic characterization linking lost information to Koopman spectral properties;  
+(3) a general Lagrangian formulation to guide better representation. 
+
+\subsection{Information Flow in Koopman Representation}
+\paragraph{A probabilistic view of Koopman representation.} Firstly, we denote $x_{1:t}$ and $z_{1:t}$ as the states and their corresponding autoregressively 
+% \zs{change to 'autoregressively'} 
+generated latent variables from time step $1$ to $t$, respectively. According to the direct information flow in Table \ref{tab:rep_comparison}, the Koopman representation induces the following trajectory distribution given $x_0$: 
+\begin{equation}
+    p^{KR}(x_{1:t} | x_0) = \int p(z_0 | x_0) \ \prod_{n = 1}^{t} p(z_{n} | z_{n-1}) p(x_n | z_n) dz_0dz_1 \cdots dz_t. \label{eq:Koopman_latent_representation}
+\end{equation}
+Here, $p(z_0| x_0)$ acts as the encoder, mapping the initial state into a latent variable. The latent forward is modeled by a linear Gaussian transition, where $p(z_{n} | z_{n-1}) = \mathcal{N}(z_{n} | \mathcal{K} z_{n-1}, \Sigma)$ is a probabilistic representation of \eqref{def:koopman_operator} with variance $\Sigma$. This directly reflects Definition~\ref{Def:Koopman}, as the latent evolution is constrained to be linear. Finally, each state $x_n$ is reconstructed from its corresponding latent variable $z_n$ via a decoder $p(x_n | z_n)$, typically instantiated as a Gaussian. We now turn to the fundamental question of whether information is inevitably lost during latent propagation.
+
+\begin{claimwithframe}[Information Loss in Latent Evolution] \label{claim:info_loss}
+Let $x_{n-1} \to z_{n-1} \xrightarrow{\mathcal{K}} z_n \!\to\! x_{n}$ represent the information propagation in Koopman representation as shown in \eqref{eq:Koopman_latent_representation}. Then, by the property of mutual information, the following holds:
+\begin{equation}
+    I(x_{n-1}; x_{n}) \geq I(z_{n-1}; x_{n}) \geq I(z_{n-1}; z_{n}) . \label{info_propagation}
+\end{equation}
+\end{claimwithframe}
+The detailed proof and its multi-step extension are provided in Appendix~\ref{claim:derivation_of_information_celing}. The first inequality reflects that the mapping $x_{n-1} \to z_{n-1}$ is a compressed representation, which may discard predictive information about $x_{n}$. The second inequality indicates that the latent forward propagation $z_{n-1} \to z_{n}$ is governed by Koopman operator, inherently limits the information that can be preserved in the latent space. As a result, $I(z_{n-1}; x_{n})$ is larger than $I(z_{n-1}; z_{n})$, since the future state $x_{n}$ generally carries more dependencies on $z_{n-1}$ than the latent evolution alone. In this sense, $I(z_{n-1}; z_{n})$ sets the \textit{information limit} of Koopman representation by the operator $\mathcal{K}$.  
+
+
+While Proposition \ref{claim:info_loss} shows the degradation of information along latent propagation, it remains an abstract statement that is not directly tractable under the complex trajectory distributions in \eqref{eq:Koopman_latent_representation}. To obtain a tractable measure, we turn to the Kullback–Leibler (KL) divergence as a natural way to quantify the discrepancy between true and Koopman-induced trajectories: 
+\begin{equation}
+\begin{split} \label{eq:probablistic_distribution}
+    D_{\mathrm{KL}} \left( p(x_{1:t} | x_0) \,\|\, q^{KR}(x_{1:t} | x_0) \right) 
+    \leq\ & D_{\mathrm{KL}}\left( p(x_{1:t} | x_0) \,\|\, p^{KR}(x_{1:t} | x_0) \right) + \mathcal{E}_{\text{enc}} + \mathcal{E}_{\text{tra}} + \mathcal{E}_{\text{rec}}
+    % +\ & \sum_{n=0}^{t-1}  \text{KL}\left(p(z_{n+1} | z_n) \,\|\, q_\theta(z_{n+1} | z_n)\right)  \\
+    % +\ &  \text{KL}\left(p(x_{1:t} | z_{1:t}) \,\|\, q_\zeta(x_{1:t} | z_{1:t}) \right) .
+\end{split}
+\end{equation}
+Here, $p$ is the true distribution and $p^{KR}$ is the ideal Koopman model distribution in \eqref{eq:Koopman_latent_representation} without any approximations. $q^{KR}$ is the variational approximation, $\mathcal{E}_{\text{enc}}$, $\mathcal{E}_{\text{tra}}$ and  $\mathcal{E}_{\text{rec}}$ are approximation errors induced by the latent representation, Koopman operator and reconstruction (see details in Appendix~\ref{claim:derivation_of_variational_distribution}). This motivates the following result, which formalizes how the information gap translates into an autoregressive error bound for Koopman representations.
+
+% \vspace{-0.1em}
+% In particular, \eqref{eq:probablistic_distribution} implies that the discrepancy measured in KL can be bounded by the information gap.
+% \begin{claimwithframe}[Autoregressive Error Bound of Koopman Representation] \label{KL_1}
+% The distribution discrepancy between the true and Koopman-induced trajectories is bounded by the information gap as 
+% \begin{equation} \label{eq:upper_info}
+% \begin{split}
+%           \| p(x_{1:t} | x_0) - q^{KR}(x_{1:t} | x_0) \|_{TV} \leq & \sqrt{\frac{1}{2}\big[D_{\mathrm{KL}}\left( p(x_{1:t} | x_0) \,\|\, p^{KR}(x_{1:t} | x_0) \right) + \mathcal{E}} \\
+%         \leq &   \sqrt{\frac{1}{2} \sum_{n=1}^{t} ( I(x_{n-1}; x_{n}) - I(z_{n-1}; z_{n})) + \mathcal{E} }.
+% \end{split}
+% \end{equation}
+% Here, $\| \cdot \|_{TV}$ is total variation distance. The upper and lower error bound is obtained as 
+% \begin{align} \label{eq:upper_error_bound}
+%      \big \| \mathbb{E}_{q^{KR}}[x_{1:t} | x_0] - \mathbb{E}_p[x_{1:t} | x_0] \big\|_2  & \leq \Bar{C} \sqrt{2 \sum_{n=1}^{t} ( I(x_{n-1}; x_{n}) - I(z_{n-1}; z_{n})) + \mathcal{E}} ,
+%      % \mathbb{E}_{p}[\| x_{1:t} -  \mathbb{E}_{q^{KR}}[x_{1:t} | x_0] \|^2|x_0] & \geq \underline{C} \exp(-\frac{2}{nt} \sum_{n=1}^{t}I(z_{n-1}; z_{n})+ \frac{2}{nt} \mathcal{E}) \label{eq:lower_error_bound}
+% \end{align}
+% where $\Bar{C}$ is positive constant and $\mathcal{E}$ is related to the approximation error in \eqref{eq:probablistic_distribution}.
+% \end{claimwithframe}
+\begin{claimwithframe}[Autoregressive Error Bound of Koopman Representation] 
+\label{KL_1}
+The distribution discrepancy between the true and Koopman-induced trajectories is bounded by the information gap as 
+{\small
+\begin{equation} \label{eq:upper_info}
+\begin{aligned}
+  \| p(x_{1:t} \mid x_0) - q^{KR}(x_{1:t} \mid x_0) \|_{TV} 
+  &\leq \sqrt{\tfrac{1}{2}\!\left[ D_{\mathrm{KL}}\!\left( p(x_{1:t}\mid x_0) \,\|\, p^{KR}(x_{1:t}\mid x_0) \right) + \mathcal{E}\right]} \\
+  &\leq \sqrt{\tfrac{1}{2} \sum_{n=1}^{t}\!\big( I(x_{n-1};x_{n}) - I(z_{n-1};z_{n})\big) + \mathcal{E} } .
+\end{aligned}
+\end{equation}
+}
+
+Here, $\| \cdot \|_{TV}$ is the total variation distance. The upper error bound is obtained as 
+{\small
+\begin{equation} \label{eq:upper_error_bound}
+   \big\| \mathbb{E}_{q^{KR}}[x_{1:t} \mid x_0] - \mathbb{E}_p[x_{1:t} \mid x_0] \big\|_2
+   \;\leq\; \Bar{C}\, \sqrt{2 \sum_{n=1}^{t} \big( I(x_{n-1};x_{n}) - I(z_{n-1};z_{n})\big) + \mathcal{E}} ,
+\end{equation}
+}
+where $\Bar{C}$ is a positive constant and $\mathcal{E}$ is related to the approximation error in \eqref{eq:probablistic_distribution}.
+\end{claimwithframe}
+
+
+\vspace{-0.5em}
+The proof is in Appendix~\ref{claim:information_error_bound}. The KL divergence between the true and Koopman-induced trajectory distributions reflects how much temporal coherence is lost during representation. Here, $I(x_{n-1};x_{n})$ quantifies the intrinsic dynamical coupling $T$ in the original system, while $I(z_{n-1};z_{n})$ characterizes the information of that coupling that exists under Koopman representation. Since $I(z_{n-1};z_{n})$ acts as the information limit (see Proposition~\ref{claim:info_loss}), the gap $I(x_{n-1}; x_{n}) - I(z_{n-1}; z_{n})$ measures the information that is lost when nonlinear dynamics are approximated by Koopman representation. Also, we link the upper/lower error bounds and distribution discrepancy in equations~\ref{eq:upper_error_bound} (lower bound see \eqref{eq:lower_bound}).  It reflects the prediction error is bounded by the step-wise information limit. 
+
+
+\subsection{Information Components in Koopman Representation}
+The latent mutual information quantifies the magnitude of error, but does not uncover how this loss relates to Koopman spectral properties. 
+% To address this, we decompose the latent mutual information into interpretable components, examine how each part shapes the Koopman representation, and connect these influences to spectral properties.
+% To sharpen the insight from Propositions~\ref{claim:info_loss} and \ref{KL_1}, we move to the aggregated quantity $I(z_t; x_t)$ and identify which specific components of information are preserved or discarded. While $I(z_t; x_t)$ measures the overall dependency between latent and true states, it reflects contributions from fundamentally different modes of Koopman representation. 
+To sharpen the insight from Propositions~\ref{claim:info_loss} and \ref{KL_1}, we consider the aggregated quantity $I(z_t; x_t)$, which measures the total information available to the decoder $p(x_t|z_t)$. Our focus is on how much of this information can be stably propagated from past latent variables $z_{t-n}$. 
+
+% From IB views, Koopman representation acts as a spectral filter, transmitting only the stable and predictive components while discarding dissipating components.
+
+% By factorizing $I(z_t; x_t)$, we can disentangle temporal-coherent, fast-dissipating and residual information, thereby clarifying what is essential for Koopman representation and what is compressible under the IB principle (refer to summary in Table~\ref{tab:info_components}). 
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.93\linewidth]{illustration.pdf}
+    \vspace{-0.5em}
+    \caption{Information-theoretic Koopman framework. (a) Structure overview, (b) Information disentanglement with spectral interpretations, and (c) Water-filling effect of Mutual Information (MI) and von Neumann entropy (VNE) on spectral information allocation.}
+    \label{fig:framework}
+% \vspace{-1.8em}
+\end{figure}
+
+
+\begin{claimwithframe}[Information Disentanglement and Spectral Property] \label{KL3}
+The mutual information $I(z_t; x_t)$ can be disentangled into a summation of three distinct components, each with a spectral interpretation (see proof in Appendix~\ref{claim:infor_disentangle}, see Figure~\ref{fig:framework}(b)):
+\vspace{-1em}
+\begin{center}
+\renewcommand{\arraystretch}{0.8}
+\setlength{\tabcolsep}{4pt}
+\footnotesize   % 或 \footnotesize, \tiny, 看你需要多小
+\begin{tabular}{@{} l | c c c @{}}
+\toprule
+\textbf{Component} 
+& \color{slowcolor} Temporal-coherent 
+& \color{confoundcolor} Fast-dissipating 
+& \color{confoundcolor} Residual \\
+\midrule
+Spectral property 
+& {\color{slowcolor}$ \lambda \!\approx\! 1 $ } 
+& {\color{confoundcolor}$\lambda <\! 1$} 
+& {\color{confoundcolor} no counterpart} \\
+Mutual info term 
+& \colorbox{softblue}{$I(z_{t-n}; z_t)$ } \color{slowcolor} $\huge\uparrow$
+ 
+& \colorbox{softred}{$I(z_t; x_{t-1} \mid z_{t-n})$}  $\textcolor{red}{\huge\downarrow}$
+& \colorbox{softred}{$I(z_t; x_t \mid x_{t-1})$} $\textcolor{red}{\huge\downarrow}$ \\ 
+\bottomrule
+\end{tabular}
+\end{center}
+The decomposition shows that Koopman representations preserve temporal-coherent information associated with spectral modes of the Koopman operator whose eigenvalues lie near the unit circle, while information linked to dissipating modes ($|\lambda|<1$) decays rapidly and noise-like components have no spectral support, hence compressible.
+\end{claimwithframe}
+
+% \vspace{-1em}
+
+
+\textit{(1). Temporal-coherent information $I(z_{t-n}; z_t)$ (see closed form \eqref{eq:latent_mutual_info_closed_form}).}  This term represents information that persists along the latent evolution $z_{t-n} \to \cdots \to z_{t}$. It corresponds to conserved or slowly dissipating information that remains stable during latent evolution. From a spectral perspective, \textit{these are associated with Koopman modes whose eigenvalues are near to the complex unit circle (i.e., $|\lambda| \approx 1$)}, implying that the corresponding information is propagated almost losslessly across time and hence remains mutually informative between past and present latent variables.
+
+\textit{(2). Fast-dissipating information $I(z_{t}; x_{t-1}|z_{t-n})$ (see closed form \eqref{eq:closed_form_2}).} This term reflects short-term dependencies that arise from the most recent state $x_{t-1}$, beyond what is already encoded in the past latent state $z_{t-n}$. Such information provides transient predictive power but quickly leaks out, since the autoregressive latent evolution $z_{t-n} \to \cdots \to z_{t}$ cannot continually access external inputs $x_{t-1}$. In contrast, \textit{these contributions are associated with Koopman modes whose eigenvalues satisfy $|\lambda| < 1$}, indicating exponential information dissipation with forward steps. Consequently, the mutual information they contribute vanishes rapidly as the time step $n$ increases, making those modes inherently cannot be captured by temporal-coherent information. 
+
+\textit{(3). Residual information $I(z_t; x_t|x_{t-1})$ (see closed form \eqref{eq:closed_form_3}).} This term measures unpredictable information in the current state that cannot be explained from the past state. It corresponds to information injected at the present step—such as noise or anomalies—that interferes with constructing a coherent latent state. Unlike temporal-coherent or fast-dissipating modes, \textit{these residuals have no spectral counterpart in the Koopman operator: they are not tied to any eigenvalue structure}. From the IB perspective, such non-predictive component is compressible. Having the disentangled information, the next question is how latent mutual information shapes Koopman representations.
+
+
+
+\begin{claimwithframe}[The Role of Latent Mutual Information] \label{KL_mutual_info}
+Maximizing the latent mutual information \( I(z_{t-n}; z_{t}) \) allocates spectral weights to temporally coherent modes in the latent space, thereby enhancing the relevance of the Koopman representation. However, excessive emphasis on this objective can lead to mode collapse, where the representation concentrates on only a few dominant modes and loses effective dimension (see Figure~\ref{fig:framework}(c)).
+ \end{claimwithframe}
+ 
+ % \vspace{-0.65em}
+ 
+In Koopman representation, the latent mutual information admits a closed form 
+\begin{equation} \label{eq:closed_form_latent_mutual_info}
+    I(z_{t-n}; z_{t}) = \frac{1}{2} \log \det(\mathrm{I} + M_n^{-\frac{1}{2}}(\mathcal{K}^{n})\mathcal{C}(\mathcal{K}^{n})^{\top}M_n^{-\frac{1}{2}})
+\end{equation}
+where $\det$ denotes the determinant, $\mathrm{I}$ is the identity matrix, $\mathcal{C} \coloneqq Cov(z_{t-n})$ is the latent covariance matrix and $M_n \coloneqq \sum_{i = 0}^{n-1}  \mathcal{K}^{i} \Sigma (\mathcal{K}^{i})^{\top}$ is the $n-$step linear forward covariance (see detailed explanation and proof in Appendix~\ref{claim:mutual_info_gaussian}). We find that, from a Lagrangian perspective, maximizing $I(z_{t-n}; z_t)$ of Koopman representation under the finite variance constraint $\mathrm{tr}(\mathcal{C}) < \infty$ leads to a \emph{water-filling allocation}: variance is distributed along the directions corresponding to the largest eigenvalues of $M_n^{-\tfrac{1}{2}}\, \mathcal{K}^{n}\mathcal{C}(\mathcal{K}^{n})^{\!\top} M_n^{-\tfrac{1}{2}}$. 
+These directions correspond to temporally coherent modes, which explains why higher latent mutual information enhances relevance. However, when the spectrum of this matrix is highly skewed, the water-filling solution degenerates into a low-rank allocation, \emph{squeezing} information into only a few dominant directions. This effect reduces the effective dimension of the latent space $Z$, causing some spectral weights to vanish (cf. \eqref{eq:KKT_solution_1}). To address the collapse induced by skewed spectral allocation, we next analyze how effective dimension can be preserved through entropy regularization.
+
+\begin{claimwithframe}[Effective Dimension and Anti-Collapse]\label{claim:effective_dim}
+Low effective dimension (see Proposition~\ref{KL_mutual_info}) in Koopman representation indicates information collapse to few dominant modes and limits the model’s ability to represent rich modes. Penalizing the von Neumann entropy $S(\frac{\mathcal{C}}{\mathrm{tr}(\mathcal{C})})$ encourages more expressive and spectrally diverse representations.
+\end{claimwithframe}
+% \vspace{-0.5em}
+Connecting to Proposition~\ref{KL_mutual_info}, Appendix~\ref{claim:effective_dim_von_neumann} contains a detailed proof via a water-filling and Lagrangian view. The normalized operator $\frac{\mathcal{C}}{\mathrm{tr}(\mathcal{C})}$ can be regarded as a density matrix in Hilbert space, and the effective dimension can be measured as $\exp(S)$ (see Definition~\ref{definition:effective_dim}). When penalized with large the von Neumann entropy, the water-filling solution attains a non-zero allocation across all modes, preventing variance from collapsing entirely onto a few dominant directions (cf. \eqref{eq:lambert_W_form}). This ensures a positive distribution of spectral weights across all modes, thereby avoiding degenerate spectra and increasing the effective dimension of the latent space $Z$ (see Figure~\ref{fig:framework}(c)). 
+
+
+
+% \zs{overall, the flow of section 3.2 is now super clear.}
+
+\subsection{Information-Theoretic Formulation for Practical Implementation}
+
+The preceding analysis (Propositions \ref{KL3}, \ref{KL_mutual_info} and \ref{claim:effective_dim}) reveals a fundamental trade-off in Koopman representation learning: maximizing latent mutual information enhances temporal coherence and predictive ability but risks mode collapse, whereas entropy regularization promotes spectral diversity for predictive sufficiency. Based on this principle, we formulate the following unified Lagrangian:
+\begin{equation} \label{eq:general_lagrangian}
+\max_z \;\; \alpha  \log I(z_{t-n}; z_t) - \beta I(z_t; x_{t} | z_{t-n}) + \gamma  S\!\left(\tfrac{\mathcal{C}}{\mathrm{tr}(\mathcal{C})}\right) + \log p(x_t|z_t),
+\end{equation}
+where $\alpha$, $\beta$ and $\gamma$ are Lagrangian multipliers. In \eqref{eq:general_lagrangian}, the first term in \eqref{eq:closed_form_latent_mutual_info} preserves temporal-coherent information, the second term penalizes fast-dissipating or confounding components ($I(z_t; x_{t} | z_{t-n}) = I(z_{t}; x_{t-1}|z_{t-n}) + I(z_t; x_t|x_{t-1})$, see proof in \eqref{eq:infor_disentanglement}), the third term rewards larger von Neumann entropy of the normalized covariance to promote spectral diversity in the latent space $Z$. Lastly, $\log p(x_t|z_t)$ is the reconstruction terms from predicted latent variable $z_t$.
+
+% \zs{what is the term $\mathcal{L}_{\text{VAE}}$ here? It should be clear as it can only be some kind of negative loss related to VAE. If it learns distributions of latent variables, better claim it somewhere clearly it is necessary to do so with some references}.
+
+While the Lagrangian in \eqref{eq:general_lagrangian} captures the desired information-theoretic trade-offs, it is not directly computable. To make it practical, we derive a tractable loss function for satisfying temporal coherence, predictive sufficiency and structural consistency
+\begin{equation} \label{eq:loss_function}
+\begin{split}
+    \max \sum_{n} \Big[ 
+    \underbrace{\colorbox{softblue}{$\alpha I(z_n; \mathcal{P}_n)$}}_{\textcolor{slowcolor}{\text{Temporal coherence}} {\color{slowcolor}}} {\color{slowcolor}} & + \underbrace{\colorbox{softred}{$\beta \mathbb{E}_{p_\theta(z_n | x_n)}[\log q_\psi(z_n | z_{n-1})]$}}_{\textcolor{red}{\text{Structural consistency}}} {\color{red}}  + \underbrace{\colorbox{softred}{$\beta H_{p_{\theta}}(z_{n}|x_{n})$}}_{\textcolor{red}{\text{Encoder entropy}}} {\color{red}} \\
+     & + \underbrace{\colorbox{softblue}{$\log p_{\omega}(x_n|z_n)$}}_{\textcolor{slowcolor}{\text{Reconstruction}}} {\color{slowcolor}} \Big] + \underbrace{\colorbox{softblue}{$\gamma S(\tfrac{\mathcal{C}}{\mathrm{tr}(\mathcal{C})})$}}_{\textcolor{slowcolor}{\text{Predictive sufficiency}}} {\color{slowcolor}} + \mathcal{L}_{\text{ELBO}}.
+\end{split}
+\end{equation}
+In VAE structure (shown in Figure~\ref{fig:framework}(a)) 
+% \zs{and also the Koopman stuff here: the reconstruction term here is different the the reconstruction term in the $\mathcal{L}_{\text{VAE}}$}
+, each component of the loss plays a distinct role in balancing the information-theoretic objectives:  (1) The mutual information $I(z_n;\mathcal P_n)$ captures temporal coherence by linking $z_n$ to its temporal neighborhood $\mathcal{P}_n = \{  z_{n\pm i} \mid 1\le i\le k  \}$, which includes immediate past and future latent states; in practice, this can be computed either via the closed form in \eqref{eq:closed_form_latent_mutual_info} for low-dimensional latents, or approximated by InfoNCE \citep{wu2020mutual} for high-dimensional settings. (2) The term $-\mathbb{E}_{p_\theta(z_n | x_n)}[\log q_\psi(z_n | z_{n-1})] - H_{p_\theta}(z_n | x_n)$ serves as an equivalent representation of the conditional mutual information $I(z_t;x_t| z_{t-1})$, with linear Gaussian transition $q_\psi(z_n | z_{n-1}) = \mathcal{N}(z_n | \mathcal{K}_\psi z_{n-1}, \Sigma_\psi)$ and entropy of encoder $H_{p_{\theta}}(z_{n}|x_{n})$ (see Appendix~\ref{pesudocode:vae}). Minimizing this KL not only encourages the latent representation to capture information from the state \(x_n\), 
+but also compresses fast-dissipating and residual components, 
+ensuring that the representation remains expressive yet simple. 
+Here, $\mathbb{E}_{p_\theta(z_n | x_n)}[\log q_\psi(z_n | z_{n-1})]$ enforces structural consistency in latent space. (3) The term $\log p_{\omega}(x_n|z_n)$ is the decoder loss from predicted latent variable $z_n$. (4) von Neumann entropy term 
+$S\!\left(\tfrac{\mathcal{C}}{\mathrm{tr}(\mathcal{C})}\right)$ 
+is computed from the normalized covariance matrix 
+$\mathcal{C} = \tfrac{1}{B}\sum_{i=1}^{B} (z_i - \bar{z})(z_i - \bar{z})^\top$ 
+of the latent codes within a minibatch of size $B$. 
+This promotes spectral diversity and guards against mode collapse, ensuring that the learned Koopman representation retains predictive sufficiency. (5) $\mathcal{L}_{\text{ELBO}}$ is the Evidence Lower Bound (ELBO) for training stability and reconstruction (see more analysis and implementation details in Appendix~\ref{pesudocode:vae}). For AE structure, $\mathbb{E}_{p_\theta(z_n | x_n)}[\log q_\psi(z_n | z_{n-1})]$ degenerates into a $L^2$ loss enforcing the structural consistency $\|z_{n+1}-\mathcal {K}_{\psi} z_n\|^2$, and ELBO becomes AE reconstruction term (see \ref{pesudocode:ae}).
+
+
+
+% \zs{seems that in this case, $\mathcal{L}_{\text{VAE}}$ is the negative reconstruction likelihood $\log p(x_n|z_n)$; so if the two terms are redundant, and a negative sign is missing?}. 
+
+
+
+% \begin{itemize}
+%     \item 
+%     \item \textbf{$I(z_n; \mathcal{P}_n)$:} 
+   
+%     This construction is inspired by the classical theory of \textit{delay-coordinate embedding} \citep{noakes1991takens}, which demonstrates that the state of a dynamical system can be faithfully reconstructed from a sequence of time-delayed states.  Analogously, by encouraging high mutual information between $z_t$ and its temporal context,  we ensure that each latent state captures sufficient information about its local dynamical neighborhood. This term is introduced to align with our theoretical claims \ref{KL_1},~\ref{KL2}, and~\ref{KL3}.  Increasing the size of the neighborhood improves long-term coherence in the latent representation,  enabling the latent space to capture a richer set of temporal modes. Since mutual information is generally intractable to compute directly,  we instead optimize its lower bound using a multi-positive variant of the InfoNCE loss.
+
+%     \item $D_{\mathrm{KL}}(q(z_{n} | x_n, x_{n+1}) \,\|\, p(z_{n} | x_{n}))$:
+%     The variational inference error measures the divergence between the inference distribution of backward dynamics and the true posterior. Instead of using the inference distribution of forward dynamics:
+%     (1) we can compress the information in $x_n$ by conditioning on $x_{n+1}$, filtering out residual information that does not causally influence future observations;
+%     (2) $x_{n+1}$ provides a form of informative feedback, guiding the latent variable $z_n$ to capture only information that is dynamics-relevant;
+%     (3) this backward-guided inference mitigates residual/confounding information and encourages consistency between inferred state and its dynamical consequence, leading to more robust and minimal latent representations shown in Claim~\ref{KL2}.
+
+%     \item \textbf{$\mathcal{S}(\rho) = -\mathrm{Tr}(\rho \log \rho)$:} 
+%     The von Neumann entropy, defined over the marginal distribution matrix $\rho$ of the latent space. This term promotes diversity in the learned latent representations and helps prevent mode collapse.
+% \end{itemize}
+
+
+
+
+% \paragraph{Information-Theoretic Formulation}
+% \begin{equation}
+%     \max_{\mathcal{K}, \ Z} \quad \underbrace{\mathbb{E}[\log p(z_{t+1} | z_t)]}_{\text{simple linear dynamics}} \quad  +  \underbrace{\beta\mathcal{H}(\rho)}_{\text{anti-compression}} \quad + \quad\underbrace{\gamma I(Z_t; Z_{t+1})}_{\text{coherence}} \ + \ \mathcal{L}_{\text{rec}}
+% \end{equation}
+% where $\alpha$ and $\beta$ are Lagrangian multipliers. 
+% \begin{itemize}
+%     \item  Prediction Loss — Task-Selective Information Compression
+%     \item Operator Entropy Regularization — Spectral Diversity and Anti-Collapse
+%     \item Mutual Information Regularization — Temporal Coherence and Statistical Dependence
+% \end{itemize}
+
+% \begin{theorem}[Operator Entropy and Effective Dimensions]
+    
+% \end{theorem}
+
+% \begin{theorem}[Mutual Information–Predictability Principle]
+    
+% \end{theorem}
+
+% \vspace{-1em}
+\section{Experiments}
+% \vspace{-1em}
+\textbf{Tasks.} We evaluate our approach across three types of dynamical data: (1) \textbf{Physical simulations}, including Lorenz 63, Kármán vortex street, Dam flow, and weather forecasting task (ERA5), which test the ability to capture nonlinear, stochastic and high-dimensional physical dynamics; (2) \textbf{Visual-input control}, including image-based Planar, Pendulum, Cartpole, and 3-Link manipulator, which evaluate the ability to extract latent dynamics from high-dimensional visual inputs while controllable in latent spaces; and (3) \textbf{Graph-structured dynamics prediction}, including Rope and Soft Robotics, which tests generalized abilities of latent representation on dynamics with graph structures (see experimental details in Appendix~\ref{append:experiment_setting}). 
+
+% These tasks jointly cover a broad class of Koopman representation learning, from physical systems to high-dimensional perception and non-Euclidean data (see experimental details in Appendix~\ref{append:experiment_setting}).
+
+\textbf{Metrics.} 
+We assess performance on both \textbf{forecasting} and \textbf{control}. 
+For forecasting, we report (i) normalized root mean square error (NRMSE) for short- and long-term predictions (for physical simulation and graphs-structured dynamics), 
+(ii) physical consistency metrics based on spectral distribution errors based on $1000-$step sequences (SDEs), 
+(iii) distributions of state measured by the Kullback–Leibler divergence (KLD), and 
+(iv) structural similarity index (SSIM) for physical simulations. 
+(v) the quality of low-dimensional manifold construction from high-dimensional visual inputs.
+For control, we measure the success rate of latent-space control of visual inputs following the setting in \citep{levine2019prediction}. 
+% Together, these metrics provide a comprehensive evaluation of predictive accuracy, physical property, and control performance across different domains.
+
+\textbf{Baseline Algorithms.} We compare against competitive baselines for each type of task. For \textbf{physical simulations}, we include VAE \citep{burgess2018understanding}, Koopman Autoencoder (KAE) \citep{pan2023pykoopman}, Koopman Kernel Regression (KKR) \citep{bevanda2023koopman}, and a SOTA Koopman variant for chaos - Poincaré Flow Neural Network (PFNN) \citep{cheng2025learning}. For \textbf{visual-input control}, we consider VAE-based representation learning methods, including Embed to Control (E2C) \citep{banijamali2018robust}, as well as Prediction, Consistency and Curvature (PCC) \citep{levine2019prediction}, together with KAE. For \textbf{graph-structured dynamics}, we compare with Compositional Koopman Operator (CKO) \citep{li2019learning}, the current SOTA method for graph-structured dynamics.
+
+\begin{table*}[ht]
+\centering
+\caption{Performance comparison of five algorithms on physical simulation tasks. PFNN is designed for chaotic dynamics and is thus not evaluated on Dam Flow. Here, $N$-NRMSE and $N$-SSIM denote errors at $N$ prediction steps, values in parentheses indicate variance, and SDE is the spectral distribution error. 
+Best results are highlighted in bold with green, second best are shaded in blue.}
+\label{tab:physical_sim}
+\scriptsize
+\resizebox{\textwidth}{!}{
+\begin{tabular}{llccccc}
+\toprule
+Task & Metric & VAE & KAE & KKR & PFNN & Ours \\
+\midrule
+\multirow{4}{*}{\shortstack{Lorenz 63 \\ ($n=3$)}} 
+  & 5-NRMSE  & 0.005 (0.002) & 0.006 (0.003) & \cellcolor{second}{0.004 (0.002)} & 0.005 (0.003) & \cellcolor{best}{\textbf{0.003 (0.002)}} \\
+  & 20-NRMSE & 0.011 (0.007) & 0.014 (0.009) & \cellcolor{second}{0.009 (0.008)} & 0.011 (0.007) & \cellcolor{best}{\textbf{0.007 (0.004)}} \\
+  & 50-NRMSE & 0.019 (0.011) & 0.023 (0.013) & 0.017 (0.009) & \cellcolor{second}{0.017 (0.007)} & \cellcolor{best}{\textbf{0.013 (0.008)}} \\
+  & KLD      & 1.047 & 0.464 & 0.342 & \cellcolor{second}{0.293} & \cellcolor{best}{\textbf{0.285}} \\
+\midrule
+\multirow{7}{*}{\shortstack{Kármán Vortex \\ ($n = 64 \times 64 \times 2$)}} 
+  & 5-NRMSE  & 0.127 (0.005) & 0.149 (0.011) & 0.114 (0.065) & \cellcolor{second}{0.075 (0.007)} & \cellcolor{best}{\textbf{0.068 (0.006)}} \\
+  & 20-NRMSE & 0.134 (0.003) & 0.195 (0.015) & 0.157 (0.057) & \cellcolor{second}{0.125 (0.012)} & \cellcolor{best}{\textbf{0.114 (0.015)}} \\
+  & 50-NRMSE & 0.211 (0.018) & 0.233 (0.027) & 0.209 (0.028) & \cellcolor{best}{\textbf{0.137 (0.015)}} & \cellcolor{second}{0.138 (0.018)} \\
+  & 5-SSIM   & 0.743 (0.100) & 0.719 (0.030) & 0.868 (0.087) & \cellcolor{second}{0.920 (0.030)} & \cellcolor{best}{\textbf{0.936 (0.025)}} \\
+  & 20-SSIM  & 0.720 (0.079) & 0.586 (0.039) & 0.732 (0.086) & \cellcolor{second}{0.800 (0.050)} & \cellcolor{best}{\textbf{0.823 (0.047)}} \\
+  & 50-SSIM  & 0.539 (0.045) & 0.571 (0.037) & 0.581 (0.061) & \cellcolor{best}{\textbf{0.710 (0.030)}} & \cellcolor{second}{0.688 (0.020)} \\
+  & SDE      & 0.538 & 0.620 & 0.799 & \cellcolor{second}{0.278} & \cellcolor{best}{\textbf{0.256}} \\
+\midrule
+\multirow{7}{*}{\shortstack{Dam Flow \\ ($n = 64 \times 64 \times 2$)}} 
+  & 5-NRMSE  & 0.030 (0.001) & 0.037 (0.000) & \cellcolor{second}{0.019 (0.003)} & -- & \cellcolor{best}{\textbf{0.018 (0.001)}} \\
+  & 20-NRMSE & 0.033 (0.000) & 0.042 (0.000) & \cellcolor{second}{0.028 (0.002)} & -- & \cellcolor{best}{\textbf{0.024 (0.001)}} \\
+  & 50-NRMSE & 0.034 (0.000) & 0.046 (0.001) & \cellcolor{second}{0.031 (0.002)} & -- & \cellcolor{best}{\textbf{0.026 (0.003)}} \\
+  & 5-SSIM   & 0.522 (0.021) & 0.419 (0.031) & \cellcolor{second}{0.720 (0.034)} & -- & \cellcolor{best}{\textbf{0.760 (0.012)}} \\
+  & 20-SSIM  & 0.443 (0.007) & 0.282 (0.024) & \cellcolor{second}{0.584 (0.025)} & -- & \cellcolor{best}{\textbf{0.627 (0.010)}} \\
+  & 50-SSIM  & 0.404 (0.005) & 0.176 (0.008) & \cellcolor{second}{0.502 (0.010)} & -- & \cellcolor{best}{\textbf{0.577 (0.006)}} \\
+  & SDE      & 0.563 & 0.488 & \cellcolor{second}{0.373} & -- & \cellcolor{best}{\textbf{0.244}} \\
+\midrule
+\multirow{6}{*}{\shortstack{ERA5 Weather \\ (channel avg)}} 
+  & 5-NRMSE  & -- & 0.055 & \cellcolor{second}{0.058} & 0.049 & \cellcolor{best}{\textbf{0.028}} \\
+  & 10-NRMSE & -- & 0.063 & \cellcolor{second}{0.068} & 0.060 & \cellcolor{best}{\textbf{0.035}} \\
+  & 50-NRMSE & -- & 0.118 & \cellcolor{second}{0.074} & 0.079 & \cellcolor{best}{\textbf{0.068}} \\
+  & 5-SSIM   & -- & 0.666 & 0.664 & \cellcolor{second}{0.697} & \cellcolor{best}{\textbf{0.867}} \\
+  & 10-SSIM  & -- & 0.619 & 0.606 & \cellcolor{second}{0.635} & \cellcolor{best}{\textbf{0.808}} \\
+  & 50-SSIM  & -- & 0.481 & \cellcolor{second}{0.707} & 0.695 & \cellcolor{best}{\textbf{0.781}} \\
+\bottomrule
+\end{tabular}
+}
+\end{table*}
+
+
+\textbf{Result Analysis.} Our analysis is organized around the contributions established in propositions(Section \ref{sec:method}), and we structure the discussion by addressing the following key questions.  \textit{(1) Does the latent mutual information determine the predictive limit of the Koopman representation? (Proposition~\ref{KL_1})} -- Yes. This is verified by the quantitative results of physical simulations in Table~\ref{tab:physical_sim}. Consistent with proposition, the prediction error under Koopman representation inevitably accumulates and is bounded by the latent mutual information. By regularizing with latent mutual information, both short- and long-term predictions are improved. Notably, PFNN \citep{cheng2025learning} is a SOTA model specifically designed with domain-specific knowledge, while our method, grounded in general information theory, achieves comparable performance on chaotic tasks (Lorenz 63 and Kármán vortex). Compared with other Koopman-based methods, our approach yields substantial improvements in both physical consistency and predictive accuracy.
+
+
+
+
+\textit{(2) How is the preserved information—particularly that associated with Koopman eigenmodes near the unit circle—shaped by latent mutual information and von Neumann entropy in constructing a dynamics-relevant manifold? (Proposition~\ref{KL_mutual_info} and \ref{claim:effective_dim})} The preserved information manifests in Koopman modes with eigenvalues lying close to the unit circle, capturing the recurrent structure of the Kármán vortex limit cycle, as shown in Figure~\ref{fig:egen_tsne} (left). However, KAE suffers from some eigenvalues collapse toward zero, reducing the effective latent dimension. This collapse explains the drift observed in its autoregressive prediction. In contrast, our model captures the limit-cycle structure and produces stable autoregressive trajectories, consistently revolving around the true orbit (Figure~\ref{fig:egen_tsne}, right). Baselines such as KKR and PFNN also capture limit-cycle structure (via one-step reconstruction) but gradually deviate from the correct trajectory over long horizons. By incorporating latent mutual information, we ensure that temporal-coherent information is retained, while von Neumann entropy prevents eigenvalue degeneration and preserves sufficient modes. Consequently, the information behind those modes can be preserved over long horizons, which directly translates into improved long-term prediction accuracy and statistical consistency, as also reported in Table~\ref{tab:physical_sim}.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.99\linewidth]{egen_tsne.pdf}
+    \caption{Eigenvalue comparison and manifold visualization of the Kármán vortex street. \textbf{Left:} Eigenvalue distributions of Koopman operators. 
+    % Our method preserves eigenvalues near the unit circle, indicating stable dynamics, whereas KAE suffers from some eigenvalue collapse toward zero, reducing the effective latent dimension. 
+    \textbf{Right:} t-SNE visualization of learned latent manifolds for five methods on the Kármán vortex. The underlying dynamics is abstracted as a limit cycle. 
+    % Our model captures this geometric structure and yields stable trajectories under autoregressive prediction, consistently revolving around the limit cycle. By contrast, baselines such as KKR and PFNN exhibit drift away from the true orbit over long horizons. 
+    }
+    \label{fig:egen_tsne}
+\end{figure}
+
+% \vspace{-1em}
+
+% \textit{(3) Is the lost information mostly related to the fast-dissipating modes?} Yes, 
+\textit{(3) How does explicit information-theoretic regularization sufficiently capture essential dynamics, compared with VAEs and Koopman autoencoders? (Proposition~\ref{KL_mutual_info} and \ref{claim:effective_dim})} As shown in the reconstructed manifolds of Figure~\ref{fig:planar_manifold}, our method produces a latent manifold that aligns most closely with the ground truth. For E2C, which is directly built on a VAE architecture, the latent geometry is heavily distorted (the loss of coherence). The manifold learned by KAE collapses into a nearly one-dimensional structure, reflecting the lack of effective dimensions in its latent space. PCC, a modified VAE-based method designed to improve manifold construction, demonstrates partial improvement but still exhibits a gap compared with our approach. By preserving both effective dimensionality and temporal coherence, our Koopman representation achieves the best average control performance in both noiseless and noisy environments (Table~\ref{tab:control_performance_1} and \ref{tab:control_performance_2} in Appendix~\ref{appendi:visual_input_result}). 
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.95\linewidth]{manifold_visualization.pdf}
+    \caption{Latent manifolds of Planar visualized using locally linear embedding. The first subfigure shows the ground truth, while the second to fifth depict manifolds learned by different algorithms.}
+    \label{fig:planar_manifold}
+% \vspace{-1em}
+\end{figure}
+% \vspace{-10em}
+
+% \clearpage 
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.98\linewidth]{era5_2.pdf}
+    \caption{Comparison of continuous predictions for the global humidity starting from $2018-01-01-00:00$ to $2018-01-08-08:00$. Error maps in the lower panels demonstrate that, compared with other models, showing with more stable and accurate results of our model (see more demonstration in Appendix~\ref{append:physical_sim}).}
+    \label{fig:era5_2}
+\end{figure}
+
+\textit{(4) How robust are the findings under noise, extended prediction horizons, and large-scale settings? (Proposition~\ref{claim:info_loss} and \ref{KL_1})} Our method remains robust under both noisy observations and extended prediction horizons. As shown in Table~\ref{tab:physical_sim} and Figure~\ref{fig:era5_2}, it maintains stable performance in long-term rollouts and physical statistics in large scale weather forecasting. Moreover, our approach supports control under noisy environments, achieving competitive performance. These quantitative results are consistent with our probabilistic propositions. 
+
+\textit{(5) To what extent can our Lagrangian formulation be generalized to diverse architectures and adapted to support downstream tasks? (Proposition~\ref{claim:info_loss}-\ref{claim:effective_dim})} Our formulation demonstrates broad applicability: it consistently improves performance across physical simulations (see Table~\ref{tab:physical_sim}), visual perception tasks for manifold construction and control (see Figure~\ref{fig:planar_manifold}, Tables \ref{tab:control_performance_1} and \ref{tab:control_performance_2} in Appendix~\ref{appendi:visual_input_result}), and graph-structured dynamics prediction (see Figure~\ref{fig:graph_prediction}). These gains indicate that the proposed Lagrangian principle is architecture-agnostic and can be readily incorporated into different settings to enhance both predictive accuracy and task effectiveness (more results are referred to Appendix~\ref{append:more_results}). 
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.95\linewidth]{CKO_ours_predicition_error.pdf}
+    \caption{Comparison of prediction over 100 rollout steps. The left two figures show results for the Rope environment ($n\in [40, 56]$) with and without noise; the right two subfigures are the results for the Soft environment ($n\in [160, 224]$).}
+    \label{fig:graph_prediction}
+\end{figure}
+\vspace{-1em}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.95\linewidth]{ablation_pendulumn.pdf} 
+    \caption{Ablation study on the pendulum task. Latent manifolds are learned from high-dimensional pendulum images, where the ground-truth phase space is isomorphic to $\mathcal{S}^1 \times \mathbb{R}$. 
+Color represents the pendulum angle. Each subplot corresponds to removing or adjusting one regularization term: latent mutual information ($\alpha$), KL divergence ($\beta$), and von Neumann entropy ($\gamma$). 
+% Without mutual information, the latent points scatter without structure; without KL, the manifold collapses; without von Neumann entropy, the $\mathbb{R}$ dimension vanishes. 
+% Only when combining all three penalties does the representation reconstruct the full $\mathcal{S}^1 \times \mathbb{R}$ manifold.
+}
+    \label{fig:pendulum_ablation}
+\vspace{-1em}
+\end{figure}
+
+\textbf{Ablation Studies.} We analyze the effect of varying each Lagrangian multiplier to understand its role in shaping Koopman representation. In the pendulum task, the ground-truth phase space is $\mathcal{S}^1 \times \mathbb{R}$, consisting of a periodic angle and an angular velocity. The ablation study in Figure~\ref{fig:pendulum_ablation} illustrates how each regularization term contributes to recovering this manifold from high-dimensional visual inputs. Without mutual information regularization ($\alpha=0$), temporal coherence is lost and the latent space degenerates into scattered points without geometric structure. Without structural consistency ($\beta=0$), the latent manifold collapses, highlighting its role in enforcing the dynamics of Koopman representation. Removing the von Neumann entropy term ($\gamma=0$) retains the circular $\mathcal{S}^1$ component but suppresses the $\mathbb{R}$ dimension, indicating the necessity of preserving effective dimensions. Increasing mutual information alone concentrates the representation on the $\mathcal{S}^1$ component (reflecting Proposition~\ref{KL_mutual_info}), while regularizing with von Neumann entropy yields a manifold that closely approximates the full $\mathcal{S}^1 \times \mathbb{R}$ structure. These observations align with the theoretical roles of the three penalties: temporal coherence, structural consistency and predictive sufficiency. 
+
+% \zs{excellent illustration!}
+
+
+
+
+
+% \vspace{-1em}
+\section{Conclusion}
+% \vspace{-1em}
+We presented a new perspective on Koopman representation by formulating it through an information-theoretic lens, leading to a general Lagrangian formulation that balances simplicity and expressiveness. Our analysis reveals the relationship between Koopman spectral properties and information in deep architectures. The proposed algorithm based on the Lagrangian formulation consistently improves the performance in a wide range of dynamical system tasks. 
+% Consistent with this theory, our experiments show that the learned Koopman representations remain interpretable and stable for long-term prediction across diverse dynamical systems. Consistent with this theory, our experiments demonstrate that the learned Koopman representations yield consistent improvements in long-term prediction and downstream tasks across diverse dynamical systems.
+
+% \clearpage
+% \clearpage
+\section*{ACKNOWLEDGMENTS}
+Zhuo Sun is supported by Fundamental Research Funds for the Central Universities 2025110590 of Shanghai University of Finance and Economics.
+
+\section*{Ethics Statement and Reproducibility Statement}
+This work raises no specific ethical concerns beyond standard practices in machine learning research. All methods, datasets, and hyperparameters are described in detail, and core code is released in supplementary materials.
+\bibliography{iclr2025_conference}
+\bibliographystyle{iclr2025_conference}
+
+\clearpage
+\appendix
+
+\section*{The Use of Large Language Models (LLMs)}
+During the preparation of this manuscript, the authors used ChatGPT to polish the writing (e.g., improving grammar, readability, and clarity). The content, technical contributions, and conclusions of the paper were developed entirely by the authors, who take full responsibility for all ideas and results presented.
+
+
+\section{Notation} \label{append:notation}
+\begin{table}[h]
+\begin{center}
+\caption{Notations in the Main Text}
+\begin{tabular}{cc}
+\toprule     
+Notations & Meaning   \\ 
+\midrule %[2pt]  
+$d$ & latent dimension \\ 
+$\det$ & determinant of matrix \\ 
+$n$ & state dimension \\
+$p$ & probability distribution \\ 
+$p^{KR}$ & probability distribution of the Koopman-induced trajectory \\ 
+$q^{KR}$ & variational approximation of the Koopman-induced trajectory \\ 
+$t$ & time step \\ 
+$\mathrm{tr}$ & trace of matrix \\ 
+$x$ & state of dynamical systems \\ 
+$z$ & latent variable of dynamical systems \\ 
+$\mathcal{C}$ & latent covariance matrix \\ 
+$\mathcal{H}$ & Hilbert space \\ 
+$I$ & mutual information \\ 
+$\mathrm{I}$ & identity matrix \\ 
+$\mathcal{K}$ & Koopman operator \\
+$D_{\mathrm{KL}}$ & KL divergence \\ 
+$L^2(\mathcal{M},\mu)$ & Lebesgue space equipped with inner product \\
+$M_n$ & $n-$step linear forward covariance \\ 
+$\mathcal{M}$ & finite-dimensional manifold \\
+$\mathcal{N}$ & Gaussian distribution \\
+$S$ & von Neumann entropy \\ 
+$T$ & discrete-time nonlinear map of dynamics \\ 
+$Z$ & latent space spanned by $\{ \phi_1, \dots, \phi_d \}$ \\ 
+$\alpha, \beta, \gamma$ & Lagrangian multipliers \\ 
+$\lambda$ & eigenvalues \\
+$\rho$ & density matrix \\
+$\phi$ & observable/feature \\ 
+$\psi, \theta, \omega$ & parameters for neural networks in Koopman representation \\
+\toprule 
+\end{tabular}
+\end{center}
+\end{table}
+
+
+\clearpage
+\section{A Gentle Introduction to Appendix}\label{append:navigation}
+
+The appendix is organized to complement the main paper with precise definitions, detailed theoretical analysis, and additional experimental material. Given the information density of the appendix, we provide here a short roadmap to guide the reader:
+
+\begin{itemize}
+    \item \textbf{Appendix~\ref{append:more_literature_review} More Literature review.} We provide the classic to modern Koopman learning methods. 
+    \item \textbf{Appendix~\ref{append:limit_and_future} Limitations and Future Directions.} We state the limitations of framework and propose some future directions for Koopman representation. 
+    \item \textbf{Appendix~\ref{append:def_and_prop}. Technical definitions.} 
+    We collect the technical background, notations, and formal definitions used throughout the paper for ease of reference.
+
+    \item \textbf{Appendix~\ref{append:theoretical_analysis}. Theoretical analysis.} 
+    This section develops our theory step by step, where each proposition answers a natural ``next question'' in the following chain:
+    \begin{enumerate}
+        \item[\textbf{Q1.}] \emph{Will information be lost?} (Proposition~\ref{claim:info_loss})  
+        \item[\textbf{Q2.}] \emph{If so, how much is lost?} (Proposition~\ref{KL_1})  
+        \item[\textbf{Q3.}] \emph{What kind of information is lost?} (Proposition~\ref{KL3})  
+        \item[\textbf{Q4.}] \emph{How can we optimize information retention?} (Proposition~\ref{KL_mutual_info})  
+        \item[\textbf{Q5.}] \emph{How can we avoid negative side effects such as mode collapse?} (Proposition~\ref{claim:effective_dim})  
+    \end{enumerate}
+    In this way, the proofs form a coherent progression: each proposition is the answer to the next natural question raised by the previous one.
+
+    \item \textbf{Appendix~\ref{append:experiements}. Experimental setup and additional results.} 
+    We provide implementation details, dataset descriptions, and supplementary results to support and validate the propositions made in the main text.
+\end{itemize}
+
+This structure ensures that readers can navigate the appendix according to their interests: consult Appendix~\ref{append:notation} for notation, Appendix~\ref{append:navigation} for the full theoretical journey.
+
+\clearpage 
+\section{More Literature Review Related to Koopman Representation} \label{append:more_literature_review}
+
+The Koopman operator was originally introduced by Koopman and von Neumann as a linear embedding of Hamiltonian dynamical systems \citep{koopman1931hamiltonian, koopman1932dynamical}. However, its infinite-dimensional nature makes it difficult to identify suitable handcrafted basis functions using conventional methods \citep{brunton2021modern}. To address this, kernel techniques from functional analysis have been employed as bases for learning the Koopman operator \citep{das2020koopman, das2021reproducing, kostic2022learning, bevanda2025koopman}. Owing to the well-posed properties of kernel functions in reproducing kernel Hilbert spaces (e.g., linearity, existence, and convergence guarantees), the Koopman operator can be directly approximated via (extended) dynamic mode decomposition (DMD or EDMD) \citep{williams2015data, takeishi2017learning, arbabi2017ergodic, xu2025reinforced}. Despite these theoretical advantages, fixed kernel functions are often too restrictive to capture a general function space \citep{berlinet2011reproducing, alpay2012reproducing}.
+
+In contrast, deep learning frameworks provide a more flexible alternative: leveraging the universal approximation property of neural networks \citep{baker1998universal, kidger2020universal}, they allow learning a general Koopman representation without relying on predefined kernels. Following this principle, (variational) autoencoder (AE/VAE) architectures have been widely adopted to extract features spanning the Koopman subspace \citep{liu2023koopa, wu2025k, xu2025data, xu2025reskoopnet}. The resulting latent representations are flexible and support downstream tasks such as prediction and control \citep{li2019learning, mauroy2020koopman, korda2020optimal, weissenbacher2022koopman}. However, these representations are typically learned in a purely self-supervised manner, lacking explicit grounding in dynamical systems theory. To improve their reliability, recent studies incorporate domain-specific priors—such as symmetry, conservation laws, dissipation, or ergodicity—into the Koopman representation \citep{vaidya2008lyapunov, weissenbacher2022koopman, azencot2020forecasting, cheng2025learning}. Within the VAE setting, recent studies \citep{federici2023latent} have started to link Markovian dynamics and information theory, demonstrating that time-lagged tricks can exploit mutual information to obtain better latent representations. While existing approaches are effective for specific dynamical systems, a formal theoretical foundation for guiding the learning of Koopman representations remains insufficient. In this work, we investigate how general information-theoretic principles can be employed to fill this gap. 
+
+\section{Limitations and Future Directions} \label{append:limit_and_future}
+A current limitation of our framework is that it does not address the sample complexity or non-asymptotic convergence of the Koopman representation; future work could explore more rigorous theoretical analyses in this direction. In addition, recent studies have highlighted connections between kernel methods \citep{ kostic2022learning, kostic2023sharp, kostic2024consistent} and information theory \citep{bach2022information}, suggesting an interesting avenue for extending conventional kernel techniques in Koopman theory through an information-theoretic perspective.
+
+
+
+\clearpage
+\section{Key Technical Definitions and Related Properties} \label{append:def_and_prop}
+% \begin{lemma}[Data Processing Inequality]
+% Let $x \rightarrow z \rightarrow y$ be a Markov chain, i.e., the conditional distribution of $z$ depends only on $y$, and $x$ and $z$ are conditionally independent given $Y$. Then the mutual information satisfies:
+% \[
+% I(X; Y) \geq I(X; Z).
+% \]
+% In other words, post-processing cannot increase the information that $Z$ contains about $X$.
+% \end{lemma}
+
+\begin{definition}[Density Matrix \citep{bach2022information}]
+A \emph{density matrix} \( \rho \in \mathbb{R}^{d \times d} \) is a real symmetric matrix satisfying:
+\begin{itemize}
+    \item \( \rho \) is positive semi-definite: \( \rho \succeq 0 \)
+    \item The trace of \( \rho \) is 1: \( \mathrm{tr}(\rho) = 1 \)
+\end{itemize}
+Such a matrix can be interpreted as a probability-weighted combination of orthonormal directions in \( \mathbb{R}^d \). It admits a spectral decomposition:
+\[
+\rho = \sum_{i=1}^d p_i v_i v_i^\top, \quad \text{where } p_i \geq 0, \sum_{i=1}^d p_i = 1,\ \text{and } v_i \in \mathbb{R}^d \text{ with } \|v_i\| = 1.
+\]
+\end{definition}
+
+
+\begin{definition}[Effective Dimension \citep{roy2007effective}] \label{definition:effective_dim}
+Given a density matrix \( \rho \) on a Hilbert space, the \emph{effective dimension} is defined as
+\[
+d_{\mathrm{eff}}(\rho) \;:=\; \exp\!\big( S(\rho) \big),
+\]
+where \( S(\rho) = - \mathrm{Tr}(\rho \log \rho) \) is the von Neumann entropy of \( \rho \).
+\end{definition}
+
+
+The \emph{effective dimension} measures how many directions in a representation space are substantially used. 
+Given a symmetric, positive semi-definite matrix \( \rho \) with unit trace, its von Neumann entropy 
+\[
+S(\rho) \;=\; - \mathrm{tr}(\rho \log \rho)
+\]
+quantifies the spectral diversity of \( \rho \). 
+The effective dimension is then defined as 
+\[
+d_{\mathrm{eff}}(\rho) = \exp\!\big(S(\rho)\big),
+\]
+so that \(d_{\mathrm{eff}}(\rho)\) can be interpreted as the number of dimensions effectively occupied by the latent variable. 
+In particular, \(d_{\mathrm{eff}}(\rho) = 1\) when \( \rho \) is concentrated on a single direction (pure state in quantum mechanics), while \(d_{\mathrm{eff}}(\rho) = d\) when \( \rho \) is maximally mixed and spreads uniformly over all \(d\) directions. 
+A higher effective feature dimension is often required to ensure predictive sufficiency.
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}
+      % 圆的参数
+      \def\r{2}  % 半径
+      \def\d{2.5} % 两圆中心距
+
+      % 左圆: H(X)
+      \fill[green, fill opacity=0.3] (0,0) circle (\r);
+      \draw (0,0) circle (\r);
+
+      % 右圆: H(Y)
+      \fill[pink, fill opacity=0.3] (\d,0) circle (\r);
+      \draw (\d,0) circle (\r);
+
+      % 标签
+      % 熵
+      \node at (-\r-0.0, \r+0.0) {$H(z)$};
+      \node at (\d+\r+0.0, \r+0.0) {$H(x)$};
+
+      % 交集 Mutual Information
+      \node at (\d/2, 0) {$I(z;x)$};
+
+      % 条件熵
+      \node at (-\r/2, 0) {$H(z|x)$};
+      \node at (\d+\r/2, 0) {$H(x|z)$};
+    \end{tikzpicture}
+    \caption{A Venn diagram illustrating entropy, conditional entropy, and mutual information between the true state $x$ and latent variable $z$. $H(x)$ and $H(z)$ denote the Shannon entropy (total information) of $x$ and $z$, respectively. Their symmetric overlap, $I(z; x)$, represents the mutual information that quantifies how much information about the true dynamics is preserved in the Koopman representation. The non-overlapping regions, $H(x|z)$ and $H(z | x)$, correspond to the residual uncertainty not captured by $I(z; x)$.}
+    \label{fig:mutual_info_venn}
+\end{figure}
+
+
+\begin{definition}[Entropy, Mutual Information and Conditional Mutual Information] \label{def:mutual_cond_mutual}
+Let $x, y, z$ be random variables. Beyond the Definition~\ref{def:mutual_info} in the main text, we give a standard definition of (conditional) mutual information based on Shannon entropy (shown in Figure~\ref{fig:mutual_info_venn}, \citep{csiszar2004information}).
+
+\begin{itemize}
+    \item \textbf{D1 Entropy} of a random variable $x$ is defined as
+    \[
+        H(x) \coloneqq - \int p(x) \log p(x) dx.
+    \]
+
+    \item \textbf{D2 Mutual Information} is defined as
+    \[
+        I(z;x) \coloneqq H(z) + H(x) - H(z,x),
+    \]
+    equivalently,
+    \[
+        I(z;x) = H(x) - H(x|z) = H(z) - H(z|x).
+    \]
+    It can also be expressed in terms of the Kullback--Leibler (KL) divergence:
+    \[
+        I(x;y) = D_{\mathrm{KL}}\!\big( p(x,y) \,\big\|\, p(x)p(y) \big),
+    \]
+    where
+    \[
+        D_{\mathrm{KL}}(p(x) \| q(x)) \coloneqq \int p(x) \log \frac{p(x)}{q(x)} dx.
+    \]
+
+    \item \textbf{D3. Conditional Mutual Information} is defined as
+    \[
+        I(x;y \mid z) \coloneqq H(x \mid z) + H(y \mid z) - H(x,y \mid z),
+    \]
+    equivalently,
+    \[
+        I(x;y \mid z) = H(x \mid z) - H(x \mid y,z).
+    \]
+    In terms of KL divergence,
+    \begin{align*}
+                I(x;y \mid z) & = \mathbb{E}_z \Big[ D_{\mathrm{KL}}\!\big( p(x,y \mid z) \,\big\|\, p(x \mid z)\,p(y \mid z) \big) \Big] \\
+                & = \mathbb{E}_z \Big[ D_{\mathrm{KL}}\!\big( p(x \mid y, z) \,\big\|\, p(x \mid z) \big) \Big].
+    \end{align*}
+\end{itemize}
+\end{definition}
+
+
+
+
+
+\clearpage
+\section{Theoretical Framework} \label{append:theoretical_analysis}
+To ground our theoretical analysis, we first formalize the autoregressive structure of Koopman representations illustrated in Figure~\ref{fig:latent_autoregressive_via_koopman}. The original dynamics evolve as a nonlinear transformation 
+\[
+x_{t-n} \to x_{t-n+1} \to \cdots \to x_t .
+\] 
+In parallel, states are \emph{encoded} into latent variables $z_{t-n}$, which propagate linearly under the Koopman operator $\mathcal{K}$ and are subsequently \emph{decoded} back to approximate the original states. This two-layer structure makes clear where information may dissipate: (i) during encoding from $x$ to $z$, (ii) along the linear latent evolution governed by $\mathcal{K}$, and (iii) during reconstruction from $z$ to $x$. Analyzing this flow of information is therefore essential for understanding the fundamental limits of Koopman representations, and the proofs of the following propositions will be developed around this structure.
+
+
+\begin{figure}[h]
+    \centering
+    \[
+    \begin{tikzcd}[row sep=5em, column sep=6em]
+    x_{t-n} 
+      \arrow[r, "T"] 
+      \arrow[d, dashed, "\text{encoding}"'] 
+      & x_{t-n+1} 
+        \arrow[r, "T"] 
+      & \cdots 
+        \arrow[r, "T"] 
+      & x_t 
+    \\
+    z_{t-n} 
+      \arrow[r, dashed, "\mathcal{K}"] 
+      & z_{t-n+1} 
+        \arrow[r, dashed, "\mathcal{K}"] 
+        \arrow[u, dashed, "\text{decoding}"'] 
+      & \cdots 
+        \arrow[r, dashed, "\mathcal{K}"]
+      & z_t 
+          \arrow[u, dashed, "\text{decoding}"'] 
+    \end{tikzcd}
+    \]
+    \caption{
+    The autoregressive structure of Koopman representation.
+    \textbf{Top row (solid arrows):} the original states $x_{t-n}$ evolve under the nonlinear map $T$. 
+    \textbf{Bottom row (dashed arrows):} the states are first \emph{encoded} into latent variables $z_{t-n}$, which then evolve linearly under the Koopman operator $\mathcal{K}$. 
+    The latent variables are subsequently \emph{decoded} back to approximate the original states. 
+    Thus, the latent evolution under Koopman representation captures essential structure but do not directly contain the full state information. Note: the dashed arrows represent the approximated Koopman representation in latent space, whereas the solid arrows denote the true underlying dynamics.}
+    
+    \label{fig:latent_autoregressive_via_koopman}
+\end{figure}
+
+
+
+\begin{fact} \label{fact1}
+    As shown in Figure~\ref{fig:latent_autoregressive_via_koopman}, we set that the latent variable $z_t$ is obtained via a probabilistic encoder that depends only on the current true state $x_t$, i.e., $p(z_t \mid x_t)$. Consequently, the information content of $z_t$ cannot exceed that of $x_t$, so $H(z_t) \le H(x_t)$ (due to the data processing inequality \citep{stone2024information}). Moreover, under this setting, $z_t$ is conditionally independent of any other variable in the dynamical system given $x_t$, i.e.,
+\[
+I(z_t ; \Box \mid x_t) = 0, \,\,\,\,\,\  \text{or equivalently} \,\,\ 
+\qquad \Box \perp\!\!\!\perp z_t \mid x_t,
+\]
+where $\Box$ denotes any variable in the dynamical system.
+\end{fact}
+
+\subsection{Proof of Proposition \ref{claim:info_loss}}  \label{claim:derivation_of_information_celing}
+Beyond establishing Proposition~\ref{claim:derivation_of_information_celing}, 
+it is crucial to highlight the phenomenon of \emph{information dissipation} in the autoregressive Koopman representation (see Figure~\ref{fig:latent_autoregressive_via_koopman}) and to clarify how the Koopman operator $\mathcal{K}$ connects to the \textit{information limit}. 
+By a fundamental principle of information theory, a compressed representation can never increase the available information. 
+While this observation yields a one-step inequality~\ref{info_propagation}, our analysis extends it to the multi-step analysis, where the cumulative effect of encoding, autoregressive latent evolution via $\mathcal{K}$, and decoding can be rigorously tracked. This extension makes explicit how information gradually dissipates at each stage of the Koopman representation, ultimately leading to the error accumulation.
+
+
+\begin{lemma}[Chain Rule of Information] \label{lemma:chain_of_info}
+For variables $x, y, z$, the mutual information with their joint variable satisfies
+\[
+I(x; y) = I(x; (y,z)) - I(x; z \mid y),
+\]
+where $(y,z)$ is treated as the joint random variable with distribution $p(y,z)$. According to the non-negativity of conditional mutual information, it is obvious that 
+\[
+I(x; (y,z)) \geq I(x; y). 
+\]
+\end{lemma}
+
+\begin{proofwithframe}
+We prove this proposition as two steps. 
+
+\textbf{Step 1.} According to the autoregressive structure of the Koopman representation, the first inequality~\ref{info_propagation} follows directly from the data processing inequality \citep{stone2024information}. Since the latent variable $z_{t-1}$ is a compressed representation of $x_{t-1}$, the mutual information between successive states cannot exceed that induced by the original dynamics $T$. Formally,
+\begin{equation}
+    I(x_{t-1}; x_t) \;\;\ge\;\; I(z_{t-1}; x_t). 
+\end{equation}
+This can be derived based on the Fact~\ref{fact1}, it can be factorized as 
+\begin{equation} \label{eq:factorize_original_info}
+\begin{aligned}
+        I(x_{t-1}; x_t) & = I((x_{t-1},z_{t-1}); x_t) - I(z_{t-1}; x_t|x_{t-1})  && \text{(Lemma~\ref{lemma:chain_of_info})} \\
+        & =  I((x_{t-1},z_{t-1}); x_t) - \cancel{I(z_{t-1}; x_t|x_{t-1})} && \text{(Fact~\ref{fact1})} \\
+         & =  I(z_{t-1}; x_t) + I(x_{t-1}; x_t|z_{t-1})  && \text{(Lemma~\ref{lemma:chain_of_info})} \\
+         & \geq I(z_{t-1}; x_t). && \text{(non-negativity of mutual information)}
+\end{aligned}
+\end{equation}
+Thus, the first inequality is derived. 
+
+\textbf{Step 2.} In terms of seconding inequality, we derive it as follow
+\begin{equation} \label{eq:factorize_z_x}
+\begin{aligned}
+        I(z_{t-1};x_t) & = I(z_{t-1};(x_t,z_t)) - I( z_{t-1}; z_t |x_t)     && \text{(Lemma~\ref{lemma:chain_of_info})} \\
+        & = I(z_{t-1};(x_t,z_t)) - \cancel{I( z_{t-1}; z_t |x_t)} && \text{(Fact~\ref{fact1})} \\
+        & = I(z_{t-1}; z_t) + I(z_{t-1}; x_t | z_{t}) && \text{(Lemma~\ref{lemma:chain_of_info})} \\
+        & \geq I(z_{t-1}; z_t). && \text{(non-negativity of mutual information)}
+\end{aligned}
+\end{equation}
+Here, the proof for the proposition ends. 
+\end{proofwithframe}
+
+Beyond the proposition, we would like to disentangle the what information is lost during the Koopman representation. Combining equations~\ref{eq:factorize_original_info} and \ref{eq:factorize_z_x}, we obtain 
+\begin{equation}
+\begin{aligned}
+    I(x_{t-1}; x_t) & = I(z_{t-1}; x_t) + I(x_{t-1}; x_t|z_{t-1}) \\
+    & = I(z_{t-1}; z_t) + I(z_{t-1}; x_t | z_{t}) + I(x_{t-1}; x_t|z_{t-1}), 
+\end{aligned}
+\end{equation}
+then, 
+\begin{equation}
+    I(x_{t-1}; x_t) - I(z_{t-1}; z_{t}) = \underbrace{I(z_{t-1}; x_t | z_{t}) + I(x_{t-1}; x_t|z_{t-1})}_{\text{step-wise information gap in Koopman representation}}. 
+\end{equation}
+Furthermore, we extend from one-step mutual information to multi-step ones (with $n\geq 1$), such that 
+\begin{equation} \label{eq:multi_step_info_fact}
+\begin{aligned}
+        I(x_{t-n}; x_t) & = I((x_{t-n},z_{t-n}); x_t) - I(z_{t-n}; x_t|x_{t-n})  && \text{(Lemma~\ref{lemma:chain_of_info})} \\
+        & =  I((x_{t-n},z_{t-n}); x_t) && \text{(Fact~\ref{fact1})} \\
+         & =  I(z_{t-n}; x_t) + I(x_{t-n}; x_t|z_{t-n})  && \text{(Lemma~\ref{lemma:chain_of_info})} \\
+        & =  I(z_{t-n}; z_t) + I(z_{t-n}; x_t|z_t) + I(x_{t-n}; x_t|z_{t-n}).  && \text{(repeating previous procedure)}
+\end{aligned}
+\end{equation}
+Also, $I(x_{t-n}; x_t|z_{t-n})$ can be disentangled as follows:
+
+\paragraph{Step 1 — Introduce $z_{t-n+1}$}
+
+Apply Lemma \ref{lemma:chain_of_info}:
+\[
+I(x_{t-n}; x_t \mid z_{t-n})
+= I(x_{t-n}; z_{t-n+1} \mid z_{t-n})
++ I(x_{t-n}; x_t \mid z_{t-n}, z_{t-n+1}).
+\]
+
+Here, the graphical structure ensures that:
+\[
+I(x_{t-n}; z_{t-n+1} \mid x_t, z_{t-n}) = 0,
+\]
+so there is no correction term.
+
+
+\textbf{Step 2 — Introduce $z_{t-n+2}$.} Expand the second term via Lemma \ref{lemma:chain_of_info}:
+\begin{align*}
+    I(x_{t-n}; x_t \mid z_{t-n}, z_{t-n+1})
+&= I(x_{t-n}; z_{t-n+2} \mid z_{t-n}, z_{t-n+1}) \\
+&+ I(x_{t-n}; x_t \mid z_{t-n}, z_{t-n+1}, z_{t-n+2}).
+\end{align*}
+
+Again, the graphical structure implies:
+\[
+I(x_{t-n}; z_{t-n+2} \mid x_t, z_{t-n}, z_{t-n+1}) = 0.
+\]
+
+
+\textbf{Step 3 — Repeat recursively.} For each $i = t - n + 1,\, t - n + 2,\, \ldots,\, t$:
+\[
+I(x_{t-n}; x_t \mid z_{t-n:i-1})
+= I(x_{t-n}; z_i \mid z_{t-n:i-1})
++ I(x_{t-n}; x_t \mid z_{t-n:i}),
+\]
+
+where
+\[
+z_{t-n:i} := (z_{t-n}, z_{t-n+1}, \ldots, z_i).
+\]
+
+Equivalently, in compact notation:
+\begin{equation} \label{eq:multi-step_fact}
+    I(x_{t-n}; x_t | z_{t-n})
+= \sum_{i = t-n+1}^t I(x_{t-n}; z_i | z_{t-n:i-1})
++ I(x_{t-n}; x_t | z_{t-n:t}). 
+\end{equation}
+Thus, by combining equations~\ref{eq:multi_step_info_fact} and \ref{eq:multi-step_fact}, the multi-step lost information becomes 
+\begin{equation}
+\begin{split}
+ & I(x_{t-n}; x_t) -  I(z_{t-n}; z_t) \\
+ = & \sum_{i = t-n+1}^t I(x_{t-n}; z_i | z_{t-n:i-1})
++ I(x_{t-n}; x_t | z_{t-n:t}) + I(z_{t-n}; x_t|z_t). 
+\end{split}
+\end{equation}
+Here, we interpret the physical meaning of the three parts in Koopman representation. Each term $I(x_{t-n}; z_i | z_{t-n:i-1})$ measures how much new information about past state $x_{t-n}$ revealed by the latent variable the latent variable $z_i$, given all previous latent states. Physically, this corresponds to the fast-dissipating modes that decay quickly; as more latent steps are added, this residual information diminishes rapidly to zero. 
+
+The second term $I(x_{t-n}; x_t | z_{t-n:t})$ measures the residual dependency between the past and the current state that cannot be fully represented the latent sequence $\{z_{t-n:t}\}$ due to the compressed representation. 
+
+The quantity $I(z_{t-n}; x_t | z_t)$ measures the information about the state $x_t$ that remains in the past latent variable $z_{t-n}$ but is not preserved in the current latent $z_t$. A positive value therefore indicates information loss during latent evolution. This phenomenon arises from Koopman modes with eigenvalues $|\lambda| < 1$, whose contributions decay over time and thus dissipate predictive information in the Koopman representation. 
+
+\clearpage
+\subsection{Derivation of Variational Distribution} \label{claim:derivation_of_variational_distribution}
+The derivation of discrepancy between true and Koopman-induced trajectories is listed as follow:
+\begin{equation} \label{eq:variational_approximation_expansion}
+\begin{aligned}
+    & D_{\mathrm{KL}} \left( p(x_{1:t} | x_0) \,\|\, q^{KR}(x_{1:t} | x_0) \right)  \\
+     = & \mathbb{E} \big[ \log \frac{ p(x_{1:t} |x_0) p^{KR}(x_{1:t} | x_0) }{p^{KR}(x_{1:t} | x_0) q^{KR}(x_{1:t} | x_0)} \big] \\
+     = & \mathbb{E} \big[ \log \frac{ p(x_{1:t} |x_0)}{p^{KR}(x_{1:t} | x_0)} \big] +   \mathbb{E} \big[ \log \frac{ p^{KR} (x_{1:t} |x_0)}{q^{KR}(x_{1:t} | x_0)} \big] \\
+     \leq & \mathbb{E} \big[ \log \frac{ p(x_{1:t} |x_0)}{p^{KR}(x_{1:t} | x_0)} \big] +  \mathbb{E} \big[ \log \frac{ p^{KR} ( z_{0:t}, x_{1:t} |x_0)}{q^{KR}(z_{0:t}, x_{1:t} | x_0)} \big]  \\
+     = &  \mathbb{E} \big[ \log \frac{ p(x_{1:t} |x_0)}{p^{KR}(x_{1:t} | x_0)} \big] +  \mathbb{E} \big[ \log \frac{ p(z_0|x_0)  \prod_{n =1}^t p(z_{n}|z_{n-1}) p(x_{n}|z_{n}) }{q^{KR}(z_0|x_0)  \prod_{n =1}^t q^{KR}(z_{n}|z_{n-1}) q^{KR}(x_{n}|z_{n})} \big]  \\
+     =&  \mathbb{E} \big[ \log \frac{ p(x_{1:t} |x_0)}{p^{KR}(x_{1:t} | x_0)} \big] + \mathbb{E}\big[ \log \frac{p(z_0|x_0)}{q^{KR}(z_0|x_0)}\big] \\
+     & \qquad \qquad +  \sum_{n=1}^{t}  \mathbb{E} \big[\log \frac{p(z_{n}|z_{n-1})}{q^{KR}(z_{n}|z_{n-1})} \big] + \mathbb{E} \big[ \log \frac{p(x_n|z_n)}{q^{KR}(x_n|z_n)} \big] \\
+     = & \underbrace{D_{\mathrm{KL}} \left( p(x_{1:t} | x_0) \,\|\, p^{KR}(x_{1:t} | x_0) \right)}_{\text{discrepancy between true and Koopman-induced distributions}} + \underbrace{D_{\mathrm{KL}} \left( p(z_0 | x_0) \,\|\, q^{KR}(z_0 | x_0) \right)}_{\text{latent representation error, $\mathcal{E}_{\text{enc}}$}} \\
+      & \qquad \qquad + \sum_{n=1}^{t} \underbrace{ D_{\mathrm{KL}} \left( p(z_n | z_{n-1}) \,\|\, q^{KR}(z_n | z_{n-1}) \right)}_{\text{Koopman operator error, $\mathcal{E}_{\text{tra}}$}} + \underbrace{D_{\mathrm{KL}} \left( p(x_n | z_{n}) \,\|\, q^{KR}(x_n | z_{n}) \right)}_{\text{reconstruction error, $\mathcal{E}_{\text{rec}}$}}. 
+\end{aligned}
+\end{equation}
+Here, $q^{KR}$ denotes the variational approximation. For notational convenience, we denote the last three terms in \eqref{eq:variational_approximation_expansion} by $\mathcal{E}_{\text{enc}}$, $\mathcal{E}_{\text{tra}}$, and $\mathcal{E}_{\text{rec}}$, respectively. Also, the logic from third line to fourth line holds since the inequality follows from the fact that marginalization cannot increase KL divergence. 
+
+
+
+\subsection{Proof of Proposition \ref{KL_1}}
+\label{claim:information_error_bound}
+Before proving Proposition~\ref{KL_1}, we first introduce a technical lemma.
+
+\begin{lemma}[Pinsker's Inequality \citep{yeung2008information}] \label{lemma:Pinsker}
+For any two probability distributions $p$ and $q$ over the same space $X$, the total variation distance
+\[
+\| p - q \|_{TV} := \sup_{X} |p(X) - q(X)|
+\]
+is equal to one half of their $L^1$ distance:
+\[
+\| p - q \|_{TV}  = \tfrac{1}{2} \int |p(x) - q(x)| \, dx .
+\]
+Moreover, it is bounded by the Kullback--Leibler divergence:
+\[
+\| p - q \|_{TV}  \;\; = \tfrac{1}{2} \int |p(x) - q(x)| \, dx  \le \;\; \sqrt{\tfrac{1}{2} D_{\mathrm{KL}}(p \,\|\, q)} .
+\]
+\end{lemma}
+
+
+
+
+\begin{proofwithframe}
+The proof proceeds in four steps: (1) establish the connection between KL divergence and total variation distance, (2) relate KL divergence to latent mutual information, (3) derive the upper error bound via information-theoretic limits, and (4) show that the lower bound decays exponentially with increasing latent mutual information.
+
+\textbf{Step 1.} By applying Pinsker's inequality (Lemma~\ref{lemma:Pinsker}) and \eqref{eq:variational_approximation_expansion}, we can directly bound the distributional discrepancy as
+\begin{equation} \label{eq:pinsker_distribution_kl}
+    \| p(x_{1:t} | x_0) - q^{KR}(x_{1:t} | x_0) \|_{TV} \leq  \sqrt{\frac{1}{2}\big[D_{\mathrm{KL}}\left( p(x_{1:t} | x_0) \,\|\, p^{KR}(x_{1:t} | x_0)\right) + \mathcal{E}_{\text{enc}} + \mathcal{E}_{\text{tra}} + \mathcal{E}_{\text{rec}}\big]} .
+\end{equation}
+
+\textbf{Step 2.} The connection between mutual information and KL divergence is given as follows:
+\begin{equation} \label{eq:one_step_KL}
+\begin{aligned}
+    & I(x_{t-1}; x_t) - I(z_{t-1}; x_t)  \\
+    = &  \mathbb{E} [\log \frac{p(x_t|x_{t-1})}{p(x_{t})} ]  - \mathbb{E} [\log \frac{p(z_t|z_{t-1})}{p(z_{t})} ]  && \text{(Definition~\ref{def:mutual_info})} \\
+    = & \mathbb{E} [\log \frac{p(x_t|x_{t-1})}{p(x_{t})} ] + \mathbb{E} [\log \frac{p(z_{t})}{p(z_t|z_{t-1})} ] \\
+    = & \mathbb{E} [ \log \frac{p(x_t|x_{t-1}) p(z_{t})}{p(x_t) p(z_t|z_{t-1})} ] \\
+    = &  \mathbb{E} [\log  \frac{p(x_t|x_{t-1})}{ p(z_t|z_{t-1})} \cdot \frac{ \frac{\cancel{p(x_t,z_t)}}{p(x_t|z_t)}}{\frac{\cancel{p(x_t,z_t)}}{p(z_t|x_t)}} ] && \text{(Bayes' rule)} \\ 
+    = & \mathbb{E} [ \log  \frac{p(x_t|x_{t-1})}{p(z_t|z_{t-1})} \cdot \frac{p(z_t|x_t)}{p(x_t|z_t)}] .
+\end{aligned}
+\end{equation}
+By recursively using the result in \eqref{eq:one_step_KL}, we can summation the results as 
+\begin{equation} \label{eq:mid_kl}
+\begin{split} 
+    & \sum_{n=1}^t \big( I(x_{n-1}; x_n) - I(z_{n-1}; z_n) \big) \\
+    = &   \sum_{n=1}^t \mathbb{E} [ \log  \frac{p(x_n|x_{n-1})}{p(z_n|z_{n-1})} \cdot \frac{p(z_n|x_n)}{p(x_n|z_n)}] \\
+    = &   \mathbb{E} [ \log  \frac{p(z_0|x_0)}{p(z_0|x_0)} \frac{ \prod_{n = 1}^t p(x_n|x_{n-1})}{\prod_{n = 1}^t p(z_n|z_{n-1})} \cdot \frac{\prod_{n = 1}^t p(z_n|x_n)}{\prod_{n = 1}^t p(x_n|z_n)}].
+\end{split}
+\end{equation}
+Here, $p(x_n|x_{n-1})$ and $p(z_n|z_{n-1})$ are governed by the original nonlinear dynamics $T$ and Koopman operator $\mathcal{N}(z_t|\mathcal{K}z_{t-1}, \Sigma)$, respectively. Based on this fact, we can further to develop \eqref{eq:mid_kl} as 
+\begin{equation} \label{eq:upper_bound_info}
+\begin{split}
+    & \mathbb{E} [ \log  \frac{p(z_0|x_0)}{p(z_0|x_0)} \frac{ \prod_{n = 1}^t p(x_n|x_{n-1})}{\prod_{n = 1}^t p(z_n|z_{n-1})} \cdot \frac{\prod_{n = 1}^t p(z_n|x_n)}{\prod_{n = 1}^t p(x_n|z_n)}] \\
+     = &  \mathbb{E} [ \log \frac{p(z_{0:t}, x_{1:t})}{p^{KR}(z_{0:t}, x_{1:t})} ] \\
+     \geq & \mathbb{E} [ \log \frac{p(x_{1:t})}{p^{KR}(x_{1:t})} ] \\
+     = & D_{\mathrm{KL}} \left( p(x_{1:t} | x_0) \,\|\, p^{KR}(x_{1:t} | x_0) \right).
+\end{split}
+\end{equation}
+Plugging \eqref{eq:upper_bound_info} into \eqref{eq:pinsker_distribution_kl} in Step 1, we have 
+\begin{equation} \label{eq:result_1_claim_2}
+\begin{split}
+          & \bigg\| p(x_{1:t} | x_0) - q^{KR}(x_{1:t} | x_0) \bigg\|_{TV} \\
+          \leq  & \sqrt{\frac{1}{2}\big[D_{\mathrm{KL}}\left( p(x_{1:t} | x_0) \,\|\, p^{KR}(x_{1:t} | x_0)\right) + \mathcal{E}_{\text{enc}} + \mathcal{E}_{\text{tra}} + \mathcal{E}_{\text{rec}}\big]} \\
+        \leq &   \sqrt{\frac{1}{2} \sum_{n=1}^{t} ( I(x_{n-1}; x_{n}) - I(z_{n-1}; z_{n})) +\mathcal{E}_{\text{enc}} + \mathcal{E}_{\text{tra}} + \mathcal{E}_{\text{rec}} }.
+\end{split}
+\end{equation}
+
+\textbf{Step 3.} Based on the distributional discrepancy in \eqref{eq:result_1_claim_2}, we have the following inequality
+\begin{align*}
+     & \big \| \mathbb{E}_{q^{KR}}[x_{1:t} \mid x_0] - \mathbb{E}_p[x_{1:t} \mid x_0] \big\|_2 \\
+     = & \Big \| \int x_{1:t} \, dq^{KR}(x_{1:t} \mid x_0) -  \int x_{1:t} \, dp(x_{1:t} \mid x_0) \Big\|_2 
+     && \text{(Lebesgue measure)} \\
+     \leq & \big \| x_{1:t} \big\|_{\infty} \underbrace{\int \big|q^{KR}(x_{1:t} \mid x_0) - p(x_{1:t} \mid x_0)\big| \, dx_{1:t} }_{L^1 \ \text{distance}}
+     && \text{(triangle inequality)} \\
+     \leq & 2\Bar{C} \, \big\| p(x_{1:t} \mid x_0) - q^{KR}(x_{1:t} \mid x_0) \big\|_{TV} 
+     && \text{(Lemma~\ref{lemma:Pinsker})} \\
+     \leq & \Bar{C} \sqrt{2 D_{\mathrm{KL}}(p(x_{1:t} \mid x_0) \,\|\, q^{KR}(x_{1:t} \mid x_0))} 
+     && \text{(Pinsker's inequality)} \\
+     \leq & \Bar{C} \sqrt{2 \sum_{n=1}^{t} \big( I(x_{n-1}; x_{n}) - I(z_{n-1}; z_{n}) \big) 
+             + \mathcal{E}_{\text{enc}} + \mathcal{E}_{\text{tra}} + \mathcal{E}_{\text{rec}} },
+     && \text{(via \eqref{eq:pinsker_distribution_kl}).}
+\end{align*}
+where the state $x$ lies in a compact space $\mathcal{M}$ with a complete metric, ensuring $\|x_{1:t} \|_{\infty} \leq \Bar{C} < \infty$. The proof ends. 
+
+\textbf{Step 4.} The classical rate-distortion theorem \citep{cover1999elements} states that $x_{1:t} \in \mathbb{R}^{n\times t}$, under $L^2$ error distortion via the ideal Koopman model $p^{KR}$, the minimal achievable distortion $D$ is bounded by 
+\begin{equation}
+    D \geq \frac{nt}{2\pi e} \exp (\frac{2}{nt} H(x_{1:t})) \cdot \exp(-\frac{2}{nt} \sum_{n=1}^t I(z_{n-1};z_n)).
+\end{equation}
+Since the entropy $H(x_{1:t})$ can be totally measured by the mutual information $\sum_{n=1}^t I(x_{n-1}; x_{n})$ of original dynamics $T$. Then the accumulative mean-squared error after $t$ steps given $x_0$ is bounded below as 
+\begin{equation} \label{eq:lower_bound}
+    \mathbb{E}_p\big[ \| x_{1:t}  - \mathbb{E}_{q^{KR}} [ x_{1:t} |x_0 ] \| | x_0 \big] \geq \underline{C} \exp(- \frac{2}{nt} (\sum_{n=1}^t I(z_{n-1};z_n)  + \mathcal{E}_{\text{enc}} + \mathcal{E}_{\text{tra}} + \mathcal{E}_{\text{rec}})),
+\end{equation}
+where the constant $\underline{C} = \frac{nt}{2\pi e} \exp (\frac{2}{nt} \sum_{n=1}^t I(x_{n-1}; x_{n})) $ absorbs the marginal entropy of the trajectory. 
+\end{proofwithframe}
+
+\begin{remark}
+A special case of Proposition~\ref{KL_1} is  ergodic system, conditioning on $x_0$ and then taking the long-time average
+\[
+\lim_{t\to\infty}\frac{1}{t}\,
+D_{KL}\big(p(x_{1:t}\mid x_0)\,\|\,q^{KR}(x_{1:t}\mid x_0)\big)
+\leq 
+\lim_{t\to\infty}\frac{1}{t} \sum_{n = 1}^t \big(I(x_{n-1}, x_n) - I(z_{n-1}, z_{n})\big),
+\]
+which follows from Proposition~\ref{KL_1}. The left-hand side is the \emph{relative entropy rate}, and the inequality shows
+that the dynamic discrepancy between $p$ and $q^{KR}$ can be controlled by the
+per-step information difference.
+\end{remark}
+
+
+\subsection{Proof of Proposition \ref{KL3}}
+\label{claim:infor_disentangle}
+
+Beyond establishing Proposition~\ref{KL3}, it is even more important to clarify the connection between spectral theory and the information components of the Koopman representation. Before proceeding to the detailed proof, we first derive the closed-form expression of latent mutual information under the Koopman representation. This will allow us to interpret the spectral properties of the Koopman operator from an information-theoretic perspective.
+
+For one-step forward under Koopman representation, we have 
+\[
+    z_{t} = \mathcal{K}z_{t-1} + \epsilon_{t-1}, \quad \epsilon_{t-1} \sim \mathcal{N}(0, \Sigma). 
+\]
+For multi-step forward, it can be recursively derived as 
+\[
+    z_{t}  = \mathcal{K} (\mathcal{\mathcal{K}}z_{t-2} + \epsilon_{t-2}) + \epsilon_{t-1},
+\]
+then, 
+\[
+ z_{t} = \mathcal{K}^nz_{t-n} + \sum_{i = 0}^{n-1} \mathcal{K}^{i} \epsilon_{t-i}. 
+\]
+Here, $\epsilon_{t-i} \sim \mathcal{N}(0, \Sigma)$ is a time-independent Gaussian distribution for all $i$. Therefore, $z_{t}$ follows the distribution as $\mathcal{N}(\mathcal{K}^nz_{t-n},  \sum_{i = 0}^{n-1}  \mathcal{K}^{i} \Sigma (\mathcal{K}^{i})^{\top})$. For convenience, we denote the covariance matrix as 
+\begin{equation} \label{eq:multi-step_gaussian_variance}
+    M_n \coloneqq \sum_{i = 0}^{n-1}  \mathcal{K}^{i} \Sigma (\mathcal{K}^{i})^{\top}, \qquad \text{with} \  z_t \sim \mathcal{N}(\mathcal{K}^nz_{t-n},  M_n)
+\end{equation}
+
+Without loss of generality, we can set $z_{t-n} \sim \mathcal{N}(0, \mathcal{C})$ and the covariance matrix is denoted as $\mathcal{C} \coloneqq Cov(z_{t-n})$. Given the latent variable $z_{t-n}$, the conditional entropy $H(z_{t}|z_{t-n})$ is calculated as 
+\begin{equation} \label{eq:cond_entropy}
+    H(z_{t}|z_{t-n}) = \frac{1}{2}\log[(2\pi e)^d \det M_n ].
+\end{equation}
+On the other hand, the entropy $H(z_t)$ is calculated as 
+\begin{equation} \label{eq:total_entropy}
+    H(z_t) = \frac{1}{2} \log [(2\pi e)^d \det \big(\mathcal{K}^n \mathcal{C} (\mathcal{K}^n)^{\top} + M_n \big)].
+\end{equation}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.98\linewidth]{eigen_mutual_info.pdf}
+    \caption{Spectral behavior of the Koopman operator under different regimes. 
+\textbf{Left:} Eigenvalues of $\mathcal{K}$ (orange dots) lie on the complex unit circle ($|\lambda|=1$), and those of $\mathcal{K}^n$ with $n=7$ (blue crosses) remain on the unit circle, indicating temporal coherence and preservation of information. 
+\textbf{Right:} Eigenvalues of $\mathcal{K}$ lie strictly inside the complex unit circle ($|\lambda|<1$), and the spectrum of $\mathcal{K}^n$ contracts toward the origin as $n$ increases, reflecting fast mixing and information dissipation.}
+\label{fig:eigen_illustration}
+\end{figure}
+
+
+\begin{proofwithframe} The proof of this proposition proceeds in three steps: (1) we first interpret latent mutual information in relation to the spectral properties of the Koopman representation; (2) we disentangle the mutual information $I(z_t; x_t)$ to clarify the role of each component and its associated spectral behavior; and (3) we derive the closed-form expression of mutual information under the Koopman representation, which highlights how the Koopman operator governs the information flow.
+
+\textbf{Step 1. Spectral Properties in Latent Mutual Information.} Based on the Definition~\ref{def:mutual_cond_mutual}, mutual information $I(z_{t-n}, z_t)$ is calculated via equations \ref{eq:multi-step_gaussian_variance},  \ref{eq:cond_entropy} and \ref{eq:total_entropy} as 
+\begin{equation} \label{eq:latent_mutual_info_closed_form}
+\begin{split}
+    I(z_{t-n}, z_t) & = H(z_t) - H(z_{t}|z_{t-n}) \\
+    & = \frac{1}{2} \log [(2\pi e)^d \det \big(\mathcal{K}^n \mathcal{C} (\mathcal{K}^n)^{\top} + M_n \big)] - \frac{1}{2}\log[(2\pi e)^d \det M_n ] \\
+    & = \frac{1}{2} \log \frac{\cancel{(2\pi e)^d} \det \big(\mathcal{K}^n \mathcal{C} (\mathcal{K}^n)^{\top} + M_n \big)}{\cancel{(2\pi e)^d} \det M_n} \\
+    & =\frac{1}{2} \log \det(\mathrm{I} + M_n^{-\frac{1}{2}}(\mathcal{K}^{n})\mathcal{C}(\mathcal{K}^{n})^{\top}M_n^{-\frac{1}{2}}).
+\end{split}
+\end{equation}
+We now examine how the behavior of the Koopman representation depends on its spectral properties, by analyzing the cases where the eigenvalues of $\mathcal{K}$ satisfy $|\lambda|>1$, $|\lambda|\approx 1$, and $|\lambda|<1$.
+
+\begin{itemize}
+    \item[$|\lambda|>1$:] The Koopman representation is explosive: $\|\mathcal{K}^n\|$ grows exponentially, so the term 
+    $\mathcal{K}^n \mathcal{C} (\mathcal{K}^n)^{\top}$ dominates. As a result, the mutual information 
+    $I(z_{t-n};z_t)$ diverges with $n$, reflecting amplification of initial uncertainty. 
+    
+    \item[$|\lambda|\approx 1$:] The Koopman representation is temporally coherent: $\mathcal{K}^n \mathcal{C} (\mathcal{K}^n)^{\top}$ remains bounded, and when noise is small the mutual information is approximately conserved at a constant level. This corresponds to the temporal-coherent information component. 
+    
+    \item[$|\lambda|<1$:] The Koopman represent is fast mixing: $\mathcal{K}^n \to 0$ as $n \to \infty$, so the additional term 
+    vanishes relative to $M_n$. Thus the mutual information $I(z_{t-n};z_t) \to 0$, indicating that information from the remote past information is asymptotically lost due to contraction and noise accumulation.
+\end{itemize}
+An illustration is given in Figure~\ref{fig:eigen_illustration}, where the left panel shows the $|\lambda|=1$ case with eigenvalues lying on the unit circle, and the right panel shows the $|\lambda|<1$ case with eigenvalues contracting toward the origin as $n$ increases.
+
+\textbf{Step 2. Disentanglement of mutual information $I(z_t; x_t)$.} 
+
+According to the chain rule of mutual information, we have
+\begin{equation}
+    H(x) = H(x \mid z) + I(z;x),
+\end{equation}
+where $H(x \mid z)$ measures the irreducible uncertainty of $x$ given the latent variable (i.e., the information lost in the latent space), and $I(z;x)$ quantifies the total amount of information about $x$ preserved in the latent representation. 
+
+In this sense, $I(z;x)$ can be regarded as the \emph{maximum information that the decoder can retain} about the data through the latent variables. To better understand the role of structural consistency, we next \emph{decompose $I(z;x)$} into components, in order to examine how much of this retained information is attributable to the latent forward via Koopman representation.
+
+
+\begin{equation} \label{eq:infor_disentanglement}
+\begin{aligned}
+    & I(z_t; x_t) \\
+    =& I(z_t, (z_{t-n}, x_t)) - \cancel{I(z_{t-n}; z_t | x_t)} \quad \text{(Fact~\ref{fact1})} \\
+    =& I(z_{t-n}; z_t) + I(z_t; x_t | z_{t-n}) \\
+    =& I(z_{t-n}; z_t) + I(z_t; (x_{t-1}, x_t) | z_{t-n}) - \cancel{I(z_t; x_{t-1}| z_{t-n}, x_t)} \quad \text{(Fact~\ref{fact1})}\\
+    =& I(z_{t-n}; z_t) + I(z_t; x_{t-1} | z_{t-n}) + I(z_t; x_t| z_{t-n}, x_{t-1}) \\
+    =& I(z_{t-n}; z_t) + I(z_t; x_{t-1} | z_{t-n}) + I(z_t; (z_{t-n}, x_t)|x_{t-1}) - \cancel{I(z_{t-n}; z_t|x_{t-1}, x_t)} \\
+    =& I(z_{t-n}; z_t) + I(z_t; x_{t-1} | z_{t-n}) + I(z_t; x_t | x_{t-1}) - \cancel{I(z_t; z_{t-n}|x_{t-1},x_t)}  \\
+    =& I(z_{t-n}; z_t) + I(z_t; x_{t-1} | z_{t-n}) +  I(z_t; x_t | x_{t-1}). 
+\end{aligned}
+\end{equation}
+
+\textbf{Step 3.} According to Step 1, the latent mutual information has been thoroughly explained; we now turn to the second and third terms in \eqref{eq:infor_disentanglement}.
+
+For linear conditional Gaussian \citep{lubbe1997information}, the mutual information for 
+\begin{equation}
+    \label{eq:closed_form_gaussian}
+I(a, b| c) = \frac{1}{2} \log \frac{\det \Sigma_{a|c} \det \Sigma_{b|c}}{\det \Sigma_{a,b|c}}
+\end{equation}
+where $\Sigma_{a \mid c}$ and $\Sigma_{b \mid c}$ denote the conditional covariance matrices of $a$ and $b$ given $c$, respectively, and $\Sigma_{a,b \mid c}$ denotes the joint conditional covariance matrix of $(a,b)$ given $c$, i.e.,
+\begin{align*}
+        \Sigma_{a,b \mid c} =
+\begin{bmatrix} 
+\Sigma_{a \mid c} & \Sigma_{ab \mid c} \\
+\Sigma_{ba \mid c} & \Sigma_{b \mid c}
+\end{bmatrix},
+\end{align*}
+with $\Sigma_{ab \mid c}$ and $\Sigma_{ba \mid c}$ being the conditional cross-covariances.
+
+
+The closed-form expression for the mutual information $I(z_t; x_{t-1} \mid z_{t-n})$ is derived as follows. 
+Conditioned on $z_{t-n}$, we have the linear–Gaussian relations
+\begin{equation}\label{eq:linear_gaussian_cond}
+\begin{aligned}
+    z_{t-1}\mid z_{t-n} &\sim \mathcal N\!\big(\mathcal K^{\,n-1} z_{t-n},\ M_{n-1}\big),\\
+    z_t\mid z_{t-n}     &\sim \mathcal N\!\big(\mathcal K^{\,n}   z_{t-n},\ M_n\big),
+\end{aligned}
+\end{equation}
+where $M_k = \sum_{i=0}^{k-1} \mathcal K^{\,i}\, \Sigma\, (\mathcal K^{\,i})^{\!\top}$.
+Assume $x_{t-1} = \mathcal D z_{t-1} + \epsilon_{t-1}$ with $\epsilon_{t-1}\sim\mathcal N(0,R)$, independent of the process noise. Then
+\begin{equation}\label{eq:cond_mutual}
+    \Sigma_{z_t, x_{t-1}\mid z_{t-n}} =
+    \begin{bmatrix}
+        M_n & \mathcal K M_{n-1}\mathcal D^\top \\
+        \mathcal D M_{n-1}\mathcal K^\top & \mathcal D M_{n-1}\mathcal D^\top + R
+    \end{bmatrix}.
+\end{equation}
+Plugging \eqref{eq:linear_gaussian_cond}–\eqref{eq:cond_mutual} into the Gaussian closed-form identity yields
+\begin{equation} \label{eq:closed_form_2}
+    I(z_t; x_{t-1} \mid z_{t-n})
+    = \tfrac{1}{2}\log
+    \frac{ \det(M_n)\, \det(\mathcal D M_{n-1}\mathcal D^\top + R) }
+         { \det\!\left(
+           \begin{bmatrix}
+           M_n & \mathcal K M_{n-1}\mathcal D^\top\\
+           \mathcal D M_{n-1}\mathcal K^\top & \mathcal D M_{n-1}\mathcal D^\top + R
+           \end{bmatrix}\right) }.
+\end{equation}
+
+To analyze how $I(z_t; x_{t-1}\mid z_{t-n})$ scales with $n$, it suffices to study the growth of
+$M_n=\sum_{i=0}^{n-1}\mathcal K^{\,i}\Sigma(\mathcal K^{\,i})^{\!\top}$.
+If the spectral radius $\rho(\mathcal K)<1$, then $M_n$ converges to the unique solution $M_\infty$ of the discrete Lyapunov equation
+$M_\infty = \Sigma + \mathcal K M_\infty \mathcal K^\top.$, hence $I(z_t; x_{t-1}\mid z_{t-n})$ remains bounded (``compressible'').
+Conversely, if $\rho(\mathcal K)>1$, then $M_n$ diverges and the information grows unbounded along the unstable directions.
+When $\rho(\mathcal K)\approx 1$, the growth is slow and reflects long-term temporal coherence (then it contradicts with \eqref{eq:latent_mutual_info_closed_form}, and can be captured by the latent mutual information). Therefore, this compressible information corresponds to the spectral radius $\rho(\mathcal K)<1$.
+
+% Here, $\mathcal K=Q\Lambda Q^\top$ with $Q$ orthogonal and $\Lambda=\mathrm{diag}(\lambda_1,\dots,\lambda_d)$,
+% then in the eigenbasis one has
+% \[
+% M_n' \;=\; \sum_{i=0}^{n-1} \Lambda^{i}\,\Sigma'\,(\Lambda^{i})^{\!\top},\quad \Sigma'=Q^\top \Sigma Q,
+% \]
+% so along each eigen-direction $j$ the contribution scales like $\sum_{i=0}^{n-1}|\lambda_j|^{2i}\,(\Sigma')_{jj}$, 
+% which is a geometric series (convergent if $|\lambda_j|<1$).
+% Without normality/diagonalizability, the precise per-direction formula involves the Schur (or Jordan) form, but the criterion by $\rho(\mathcal K)$ still applies.
+
+As for the residual term $I(z_t; x_t \mid x_{t-1})$, it can be expanded as
+\begin{equation} \label{eq:closed_form_3}
+\begin{split}
+        I(z_t; x_t \mid x_{t-1}) 
+        &= H(x_t \mid x_{t-1}) - H(x_t \mid z_t, x_{t-1}) \\
+        &= H(x_t \mid x_{t-1}) - \tfrac{1}{2} \log \det ((2 \pi e)^d R),
+\end{split}
+\end{equation}
+where the second equality follows from the observation model 
+$x_t = \mathcal{D}z_t + \epsilon_t$ with $\epsilon_t \sim \mathcal{N}(0, R)$,
+which implies 
+$H(x_t \mid z_t, x_{t-1}) = \tfrac{1}{2} \log \det ((2 \pi e)^d R)$.
+Therefore, this residual mutual information depends only on the noise covariance $R$ and original dynamics $T$, but it has no spectral counterpart in the Koopman operator.
+
+\noindent\textbf{Summary.} 
+The mutual information $I(z_t;x_t)$ naturally decomposes into three parts: 
+(i) temporal-coherent information $I(z_{t-n};z_t)$, which captures temporal coherence when eigenvalues of Koopman operator $ \lambda \approx 1$; 
+(ii) fast-dissipating information $I(z_t;x_{t-1}\mid z_{t-n})$, which remains bounded only in the stable regime $\rho(\mathcal K)<1$; and 
+(iii) residual information $I(z_t;x_t | x_{t-1})$, which reflects observation noise and has no spectral counterpart. 
+These three components and their spectral interpretations are summarized in Table~\ref{tab:summary_of_claim_3}.
+\end{proofwithframe}
+
+
+
+
+
+
+
+\begin{table}[h]
+\centering
+\caption{Spectral interpretation of information components in Koopman representation}
+\label{tab:summary_of_claim_3}
+\begin{tabularx}{0.95\textwidth}{@{} lXXX @{}}
+\toprule
+\textbf{Information} & \textbf{Spectral property} & \textbf{Temporal behavior} & \textbf{Information meaning} \\
+\midrule
+Temporal-coherent & $ \lambda \approx 1$ & Long-lived, persistent & Predictable, low entropy \\
+Fast-dissipating & $ \lambda < 1$ & Rapidly decaying, short-lived & Transient, compressible under IB \\
+Residual / Confounding & --  (no spectral counterpart) & Unpredictable, injected at present step & Noise, anomalies, non-predictive leftovers \\
+\bottomrule
+\end{tabularx}
+\label{tab:info_components}
+\end{table}
+
+
+
+
+
+\subsection{Proof of Proposition \ref{KL_mutual_info}}
+\label{claim:mutual_info_gaussian}
+
+To establish this proposition, we analyze the problem from a Lagrangian perspective. Specifically, we investigate how the Koopman representation behaves when the latent mutual information $I(z_{t-n};z_t)$ is maximized under a finite variance constraint. This perspective reveals a water-filling allocation principle that governs how variance is distributed across spectral modes, thereby clarifying the connection between latent mutual information and the latent variable $z$. 
+
+\begin{proofwithframe}
+Consider latent variable under Koopman representation showing \eqref{eq:multi-step_gaussian_variance} 
+\begin{equation}
+    z_{t} = \mathcal{K}^n z_{t-n} + \varepsilon, \quad \varepsilon \sim \mathcal{N}(0, M_n), \quad \mathcal{C} \coloneqq \mathbb{E}[z_{t-n} z_{t-n}^{\top}],
+\end{equation}
+where  denotes the covariance matrix of $z_{t-n}$. The matrix $\mathcal{C}$ characterizes the spectral distribution of the latent variable, and our goal is to investigate how maximizing latent mutual information influences Koopman representation. 
+
+According to the previous proof in \eqref{eq:latent_mutual_info_closed_form}, we have 
+\[
+    I(z_{t-n}; z_{t}) = \frac{1}{2} \log \det(\mathrm{I} + M_n^{-\frac{1}{2}}(\mathcal{K}^{n})\mathcal{C}(\mathcal{K}^{n})^{\top}M_n^{-\frac{1}{2}}). 
+\]
+Denote the singular value decomposition $M_n^{-\frac{1}{2}} (\mathcal{K})^n =  U \text{diag}(\sqrt{g_i}) V^{\top}$ with $g_i \geq 0$. Then 
+\begin{equation} \label{eq:SVD}
+\begin{split} 
+        I(z_{t-n}; z_{t}) & = \frac{1}{2} \log  \det \big(\mathrm{I} + U \text{diag}(\sqrt{g_i}) V^T \mathcal{C} V \text{diag}(\sqrt{g_i}) U^{\top}   \big).
+\end{split}
+\end{equation}
+As $\mathrm{tr}(\mathcal{C})$ measures the total second moment, we impose $\mathrm{tr}(\mathcal{C}) \leq C$ for some finite constant $C$. This assumption ensures that the Koopman representation has a bounded total variance, preventing degenerate solutions where the variance grows without bound.
+
+Under the constraint $\mathrm{tr}(\mathcal{C}) \leq C$, maximizing the latent mutual information under Koopman representation becomes an optimization problem as 
+\begin{equation} \label{eq:optimization}
+\begin{split}
+    \max_{\mathcal{C}} \quad & \frac{1}{2} \log  \det \big(\mathrm{I} + U \text{diag}(\sqrt{g_i}) V^T \mathcal{C} V \text{diag}(\sqrt{g_i}) U^{\top}   \big) \\ 
+    \text{s.t.} \ \ & \mathrm{tr}(\mathcal{C}) \leq C. 
+\end{split}
+\end{equation}
+In \eqref{eq:SVD}, the matrices $U$ and $V$ are orthogonal, and $\mathcal{C}$ is a symmetric positive semidefinite matrix with eigenvalues $\{p_1,\dots,p_d\}$ with $p_i \geq 0$ for all $i$. We interpret these eigenvalues as spectral weights of the Koopman observables/features, indicating how variance is allocated across the observable/feature directions $\{\phi_1,\dots,\phi_d\}$ defined in \eqref{def:koopman_operator}. Then, optimization problem in \eqref{eq:optimization} becomes a water-filling problem as
+\begin{equation}
+    \max_{p_i, \ \sum_{i = 1}^d p_i \leq C}   \frac{1}{2} \sum_{i=1}^d \log (1+ g_i p_i). 
+\end{equation}
+The Lagrangian formulation becomes 
+\begin{equation} \label{eq:first_lagrangian}
+    \mathcal{L} = \frac{1}{2} \sum_{i=1}^d \log (1+ g_i p_i) - \mu (\sum_{i = 1}^d p_i - C  ) - \sum_{i = 1}^d \eta_i p_i. 
+\end{equation}
+According to Karush–Kuhn–Tucker (KKT) condition \citep{boyd2004convex}, we obtain
+\begin{equation}
+    \frac{\partial \mathcal{L} }{\partial p_i } = \frac{g_i}{ 2(1+g_ip_i)} - \mu - \eta_i = 0, \ \eta_i = 0 \quad \Rightarrow  \quad p_{i} = \frac{1}{2\mu} - \frac{1}{g_i}.
+\end{equation}
+Based on the non-negativity of the eigenvalues $p_i \geq 0$ for all $i$, the optimal allocation is
+\begin{equation} \label{eq:KKT_solution_1}
+p_i = \max \Big\{ 0,\; \tfrac{1}{2\mu} - \tfrac{1}{g_i} \Big\},
+\end{equation}
+where $\mu$ is the Lagrange multiplier determined by the variance budget constraint.
+This solution characterizes the spectral weights of the Koopman representation along each observable/feature direction, and reveals two key phenomena:
+\begin{itemize} 
+\item \textbf{Concentration on temporally coherent modes.} Since $g_i$ depends on the Koopman eigenvalues through $\mathcal{K}^n$, larger $p_i$ in \eqref{eq:KKT_solution_1} are assigned to eigen-directions with $\lvert \lambda \rvert \approx 1$, corresponding to temporal-coherent modes. 
+\item \textbf{Mode collapse.} Because $\sum_{i=1}^d p_i \leq C$, variance is preferentially allocated to directions with larger gain $g_i$, while less informative directions receive zero weight. This leads to a low-rank allocation (low effective dimension) where only a subset of modes are retained.
+\end{itemize}
+In summary, this proof demonstrates that maximizing latent mutual information is equivalent to a water-filling allocation of spectral weights, which naturally explains why emphasizing this objective can lead to mode collapse in the Koopman representation.
+\end{proofwithframe}
+
+
+
+\subsection{Proof of Proposition \ref{claim:effective_dim}}
+\label{claim:effective_dim_von_neumann}
+Connecting to Proposition~\ref{KL_mutual_info}, we continue to prove Proposition \ref{claim:effective_dim} via Lagrangian formulation. Without entropy regularization, the solution degenerates to low-rank (mode collapse); with entropy regularization, the solution assigns non-zero weights to all directions, improving effective dimension. 
+\begin{proofwithframe}
+According to Definition~\ref{Effective Dimension}, we can normalize $\mathcal{C}$ into a density matrix $\tfrac{\mathcal{C}}{\operatorname{tr}(\mathcal{C})}$, then
+\[
+S(\tfrac{\mathcal{C}}{\operatorname{tr}(\mathcal{C})}) = - \sum_{i=1}^d \frac{p_i}{\mathrm{tr}(\mathcal{C})} \log  \frac{p_i}{\mathrm{tr}(\mathcal{C})}
+\]
+with $p_i$ is the eigenvalue of $\mathcal{C}$. 
+
+Under a given regularization coefficient $\gamma$, this normalization allows us to improve the effecitve dimension. Based on \eqref{eq:first_lagrangian}, the modified Lagrangian formulation under the regularized Von Neumann entropy becomes 
+\begin{equation} \label{eq:lagrangian_2}
+        \mathcal{L} = \frac{1}{2} \sum_{i=1}^d \log (1+ g_i p_i) + \gamma(- \sum_{i=1}^d \frac{p_i}{\mathrm{tr}(\mathcal{C})} \log  \frac{p_i}{\mathrm{tr}(\mathcal{C})} ) - \mu (\sum_{i = 1}^d p_i - C  ) - \sum_{i = 1}^d \eta_i p_i. 
+\end{equation}
+Based on the KKT condition, we have 
+\begin{equation} \label{eq:kkt_2}
+    \frac{\partial \mathcal{L}}{\partial p_i} = \frac{g_i}{ 2(1+g_ip_i)} - \mu - \eta_i - \frac{\gamma}{\mathrm{tr}(\mathcal{C})} ( \log \frac{p_i}{\mathrm{tr}(\mathcal{C})} + 1) = 0,
+\end{equation}
+where $\eta_i = 0$ under the KKT condition. The solution of \eqref{eq:kkt_2} is 
+\[
+\frac{g_i}{ 2(1+g_ip_i)} - \mu = \frac{\gamma}{\mathrm{tr}(\mathcal{C})} ( \log \frac{p_i}{\mathrm{tr}(\mathcal{C})} + 1). 
+\]
+Since a closed-form solution is not directly available, we proceed with further algebraic transformation.
+
+By reorganization,  
+\[
+\log \frac{p_i}{\mathrm{tr}(\mathcal{C})} = \frac{\mathrm{tr}(\mathcal{C})}{\gamma} \bigg(\frac{g_i}{ 2(1+g_ip_i)} - \mu \bigg) -1. 
+\]
+Exponential both sides:
+\[
+\frac{p_i}{\mathrm{tr}(\mathcal{C})} = \exp \bigg( \frac{\mathrm{tr}(\mathcal{C})}{\gamma} \bigg( \frac{g_i}{ 2(1+g_ip_i)} - \mu \bigg) -1  \bigg)
+\]
+Then,
+\[
+p_i = \mathrm{tr}(\mathcal{C}) \exp \bigg( \frac{\mathrm{tr}(\mathcal{C})}{\gamma} \bigg(\frac{g_i}{ 2(1+g_ip_i)} - \mu \bigg) -1  \bigg)
+\]
+We can transform the above form as,  
+\begin{equation} \label{eq:lambert_W_form}
+    p_i  \underbrace{\exp \bigg( - \frac{\mathrm{tr}(\mathcal{C})}{\gamma} \frac{g_i}{ 2(1+g_ip_i)} \bigg)}_{> 0} = \underbrace{\mathrm{tr}(\mathcal{C}) \exp \bigg(-1 -  \frac{\mathrm{tr}(\mathcal{C})}{\gamma} \mu \bigg)}_{= C_1 > 0}.
+\end{equation}
+Here $C_1 = \mathrm{tr}(\mathcal{C}) \exp \bigg(-1 -  \frac{\mathrm{tr}(\mathcal{C})}{\gamma} \mu \bigg)$ is a positive constant Introducing $y = 1 + g_ip_i$, we can write \eqref{eq:lambert_W_form} via algebraic transform: 
+\begin{equation} 
+    (y - 1) \exp \bigg( - \frac{\mathrm{tr}(\mathcal{C})g_i}{2 \gamma y }\bigg) = g_i C_1.
+\end{equation}
+The above equation is related to the form $x\exp(x) + rx = constant$, we can solve it via the generalized Lambert W function (also known as r-Lambert W \footnote{$W_r$ denotes the generalized Lambert W function, defined as the solution of $x\exp(x) + rx = constant$.}, see \citep{veberivc2012lambert})  
+\begin{equation}
+    y = \frac{\frac{\mathrm{tr}(\mathcal{C})g_i}{2\gamma}}{W_{1/(g_iC_1)}\big( \frac{\frac{\mathrm{tr}(\mathcal{C})g_i}{2\gamma}}{g_iC_1}\big)}.
+\end{equation}
+Here, $W_{1/(g_iC_1)}(\cdot)$ is the r-Lambert W function. Since $p_i = \frac{y-1}{g_i}$, the closed form of $p_i$ becomes
+\begin{equation}
+    p_i = \frac{\frac{\mathrm{tr}(\mathcal{C})}{2\gamma}}{W_{1/(g_iC_1)}\big( \frac{\frac{\mathrm{tr}(\mathcal{C})g_i}{2\gamma}}{g_iC_1}\big)} - \frac{1}{g_i} > 0. 
+\end{equation}
+Then, the solution of \eqref{eq:lagrangian_2} under the regularized von Neumann entropy assigns non-zero spectral weight to all observable/feature directions $\{\phi_1,\dots,\phi_d \}$, since $p_i>0$ holds according to \eqref{eq:lambert_W_form}. Consequently, the effective dimension is provably improved.
+
+\end{proofwithframe}
+
+\clearpage
+\section{Practical Details, Implementation and Experimental Details} \label{append:experiements}
+
+
+
+\subsection{Implementation Details for VAE} \label{pesudocode:vae}
+% \label{append:Pseudocode}
+
+\begin{algorithm}
+\caption{Information-Theoretic Koopman Representation (VAE, probabilistic)}
+\begin{algorithmic}[1]
+\REQUIRE Dataset $\mathcal{D}=\{x_n\}_{n=0}^T$; network parameters $(\alpha,\beta,\gamma)$; learning rate $\eta$; number of epochs $K$; batch size $B$; neighbor window $k$; temperature $\tau$.
+\STATE Initialize encoder $p_\theta(z|x)$, decoder $p_\omega(x|z)$, and latent dynamics network $q_\psi(z_n|z_{n-1})$.
+\FOR{epoch $=1$ to $K$}
+    \FOR{each minibatch $\{x_1,\dots,x_B\}$ from $\mathcal D$}
+        \STATE Sample latents $z_i \sim p_\theta(z|x_i)$.
+        \STATE \textbf{Temporal coherence (InfoNCE)}: 
+        For each $z_n$, treat its \textit{temporal} neighbors 
+        $\mathcal P_n=\{z_{n\pm i}\mid 1\le i\le k\}$ as positive samples, 
+        compute
+        \[
+        I(z_n;\mathcal P_n)\approx \frac{1}{|\mathcal P_n|}\sum_{p\in\mathcal P_n}
+        \log \frac{\exp(z_n^\top z_p/\tau)}{\sum_{j=1}^B \exp(z_n^\top z_j/\tau)} .
+        \]
+        \STATE \textbf{Structural consistency}: compute latent likelihood
+        \[
+        \mathbb{E}_{p_\theta(z_n | x_n)}[\log q_\psi(z_n | z_{n-1})]
+        \]
+        \STATE \textbf{Predictive sufficiency}: compute covariance 
+        $\mathcal{C}=\tfrac{1}{B}\sum_i(z_i-\bar z)(z_i-\bar z)^\top$, where $\bar z=\frac{1}{B}\sum_iz_i$;
+        normalize $P=\mathcal{C}/\mathrm{tr}(\mathcal{C})$, 
+        then compute 
+        \[
+        S(P)=-\sum_j \lambda_j\log\lambda_j, \quad 
+        \text{where $\lambda_j$ denotes $j$ th eigenvalue of $P$}.
+        \]
+        \STATE \textbf{Standard Evidence Lower Bound (ELBO) term (for training stability and reconstruction)}:
+        \[
+        \mathcal L_\text{ELBO} = \log p_\omega(x_{n-1}|z_{n-1}) - D_{\mathrm{KL}}\!\left(p_\theta(z_{n-1}|x_{n-1})\,\|\, \mathcal N(0,I)\right).
+        \]
+        \STATE \textbf{Total Loss}: 
+        \begin{align*}
+            \mathcal L  = -\Big[ \alpha I(z_n;\mathcal P_n)  & + 
+           \mathbb{E}_{p_\theta(z_n | x_n)}[\log q_\psi(z_n | z_{n-1})]   + H_{p_\theta}(z_n | x_n) \\
+            & + \log p_\omega(x_n|z_n)
+            + \gamma S(P) + \mathcal L_\text{ELBO} \Big].
+        \end{align*}
+        \STATE Update $\theta,\omega,\psi$ using Adam step $\eta$
+    \ENDFOR
+\ENDFOR
+\end{algorithmic}
+\end{algorithm}
+
+% \zs{Should the term $L_\text{VAE}$ be outside the negative bracket?}
+
+\paragraph{Connection to Structural Consistency.} 
+% By Definition~\ref{def:mutual_cond_mutual}, when given $z_{n-1}$ the conditional mutual information is 
+% \[
+% I(z_n; x_n \mid z_{n-1}) 
+% = 
+% H(z_{n}|z_{n-1}) - H(z_n|x_{n}, z_{n-1}). 
+% .
+% \]
+% Since the encoder is independent with $z_{n-1}$ in our setting (according to Figure~\ref{fig:latent_autoregressive_via_koopman}), the it becomes 
+% \[
+% I(z_n; x_n \mid z_{n-1}) 
+% = 
+% H(z_{n}|z_{n-1}) - H(z_n|x_{n})
+% .
+% \]
+
+% Consider the encoder distribution 
+% \[
+% p_\theta(z_n \mid x_n),
+% \] 
+% which maps observations to latent variables, and the Koopman prior
+% \[
+% q_\psi(z_n \mid z_{n-1}) = \mathcal{N}\!\big(z_n \mid \mathcal{K}_\psi z_{n-1}, \Sigma_\psi\big),
+% \] 
+% which models latent evolution as a linear Gaussian transition governed by the Koopman operator $\mathcal{K}_\psi$. 
+
+% The regularization term
+% \begin{equation} \label{eq:analysis_on_kl}
+%     I(z_n; x_n \mid z_{n-1}) = \mathbb{E}_{p_\theta(z_n | x_n)}[-\log q_\psi(z_n | z_{n-1})] + H_{p_\theta}(z_n | x_n)
+% \end{equation}
+By Definition~\ref{def:mutual_cond_mutual}, when given $z_{n-1}$ the conditional mutual information is 
+\[
+I(z_n; x_n \mid z_{n-1}) 
+= H(z_{n}\mid z_{n-1}) - H(z_n\mid x_{n}, z_{n-1}).
+\]
+Since the encoder is independent of $z_{n-1}$ in our setting (according to Figure~\ref{fig:latent_autoregressive_via_koopman}), this simplifies to 
+\begin{equation} \label{eq:entropy_form}
+    I(z_n; x_n \mid z_{n-1}) 
+= H(z_{n}\mid z_{n-1}) - H(z_n\mid x_{n}).
+\end{equation}
+
+Consider the encoder distribution 
+\[
+p_\theta(z_n \mid x_n),
+\] 
+which maps observations to latent variables, and the Koopman prior
+\[
+q_\psi(z_n \mid z_{n-1}) = \mathcal{N}\!\big(z_n \mid \mathcal{K}_\psi z_{n-1}, \Sigma_\psi\big),
+\] 
+which models latent evolution as a linear Gaussian transition governed by the Koopman operator $\mathcal{K}_\psi$. 
+
+Then the conditional mutual information can be equivalently written as the following form according to Definition~\ref{def:mutual_cond_mutual} or \eqref{eq:entropy_form}: 
+\begin{equation} \label{eq:analysis_on_kl}
+I(z_n; x_n \mid z_{n-1}) 
+= \mathbb{E}_{p_\theta(z_n \mid x_n)}
+\left[
+    \log \frac{p_\theta(z_n \mid x_n)}{q_\psi(z_n \mid z_{n-1})}
+\right].
+\end{equation}
+Expanding the term in \eqref{eq:analysis_on_kl}, we 
+\[
+I(z_n; x_n \mid z_{n-1}) 
+= \mathbb{E}_{p_\theta(z_n \mid x_n)}[-\log q_\psi(z_n \mid z_{n-1})]
+- H_{p_\theta}(z_n \mid x_n).
+\]
+
+has two effects: 
+\begin{enumerate}
+    \item \textbf{Alignment with Koopman dynamics.}  
+    The expectation term $\mathbb{E}_{p_\theta(z_n | x_n)}[-\log q_\psi(z_n | z_{n-1})]$ requires samples drawn from the encoder to lie in regions of high likelihood under the Koopman prior. Since the prior is parameterized as a linear Gaussian transition, minimizing the KL forces the encoder outputs to be predictable under a linear structure. 
+
+    \item \textbf{Entropy regularization.}  
+    The entropy term $H_{p_\theta}(z_n | x_n)$ encourages that the encoder not to be deterministic. 
+\end{enumerate}
+
+Together, these effects ensure that the latent variables produced by the encoder not only encode information about the current state but also evolve consistently with the linear Gaussian dynamics imposed by the Koopman operator. Formally, 
+\[
+p_\theta(z_n \mid x_n) \approx q_\psi(z_n \mid z_{n-1}) 
+\quad \Longrightarrow \quad
+z_n \text{ evolves approximately linearly under } \mathcal{K}_\psi,
+\]
+which enforces \emph{structural consistency} in the latent space.
+
+
+% \paragraph{The closed form of $D_{\mathrm{KL}}\left(p_{\theta}(z_{n} | x_n)\| q_{\psi}(z_{n} | z_{n-1})\right)$.} Consider two Gaussian distributions:
+% \[
+% p_\theta(z_n \mid x_n) = \mathcal{N}(\mu_\theta(x_n), \Sigma_\theta(x_n)), 
+% \quad 
+% q_\psi(z_n \mid z_{n-1}) = \mathcal{N}(\mathcal{K}_\psi z_{n-1}, \Sigma_\psi),
+% \]
+% where \(p_\theta\) denotes the encoder posterior and \(q_\psi\) the Koopman prior. 
+% The KL divergence between them admits a closed-form solution \citep{guionnet2004lectures}:
+% \begin{equation}
+% \begin{aligned} \label{eq:two_gaussian_kl}
+% D_{\mathrm{KL}}\!\left(p_\theta(z_n \mid x_n)\,\|\,q_\psi(z_n \mid z_{n-1})\right) 
+% = \tfrac{1}{2} \Big[ 
+% & \log\frac{|\Sigma_\psi|}{|\Sigma_\theta|} - d \\
+% &+ \mathrm{tr}(\Sigma_\psi^{-1}\Sigma_\theta) \\
+% &+ (\mathcal{K}_\psi z_{n-1}-\mu_\theta)^\top 
+%    \Sigma_\psi^{-1} (\mathcal{K}_\psi z_{n-1}-\mu_\theta) 
+% \Big],
+% \end{aligned}
+% \end{equation}
+% where \(d\) is the latent dimension.
+
+
+\clearpage
+\subsection{Implementation Details for AE} \label{pesudocode:ae}
+\begin{algorithm}[h]
+\caption{Information-Theoretic Koopman Representation (AE, deterministic)}
+\begin{algorithmic}[1]
+\REQUIRE Dataset $\mathcal{D}=\{x_n\}_{n=0}^T$; hyperparameters $(\alpha, \beta, \gamma)$; learning rate $\eta$; number of epochs $K$; batch size $B$; neighbor window $k$; temperature $\tau$.
+\STATE Initialize deterministic encoder $z_n = f_\theta(x_n)$, decoder $\hat x_n = g_\omega(z_n)$, and Koopman operator $\mathcal K_{\psi}$.
+\FOR{epoch $=1$ to $K$}
+    \FOR{each minibatch $\{x_1,\dots,x_B\}$ from $\mathcal D$}
+        \STATE Encode latents $z_i = f_\theta(x_i)$ for $i=1,\dots,B$.
+        \STATE \textbf{Temporal coherence (InfoNCE)}: 
+        \[
+        I(z_n;\mathcal P_n)\approx \tfrac{1}{|\mathcal P_n|}\sum_{p\in\mathcal P_n}
+        \log \frac{\exp(z_n^\top z_p/\tau)}{\sum_{j=1}^B \exp(z_n^\top z_j/\tau)} .
+        \]
+        \STATE \textbf{Structural consistency (deterministic)}:
+        \[
+        \mathcal L_\text{Koop} = \|z_{n+1} - \mathcal{K}_{\psi} z_n\|^2 .
+        \]
+        \STATE \textbf{Predictive sufficiency}: compute $S(P)$ from normalized covariance $P=\tfrac{\mathcal C}{\mathrm{tr}(\mathcal C)}$, $\mathcal C=\tfrac{1}{B}\sum (z_i-\bar z)(z_i-\bar z)^\top$.
+        \STATE \textbf{Reconstruction}: 
+        \[
+        \mathcal L_\text{rec} = \|x_n - g_\omega(z_n)\|^2 .
+        \]
+        \STATE \textbf{Total Loss}:
+        \[
+        \mathcal L = \mathcal L_\text{rec} - \alpha I(z_n;\mathcal P_n) + \beta \mathcal L_\text{Koop} - \gamma S(P) .
+        \]
+        \STATE Update $\theta,\omega,\psi$ with Adam step $\eta$.
+    \ENDFOR
+\ENDFOR
+\end{algorithmic}
+\end{algorithm}
+
+\clearpage
+\subsection{Experiment Settings and Additional Results} \label{append:experiment_setting}
+
+\subsubsection{Physical Simulation}
+
+\paragraph{Lorenz.} 
+The Lorenz dataset is generated from the classical Lorenz system of ordinary differential equations (ODEs), which model simplified atmospheric convection. The governing equations are:
+\begin{equation}
+\begin{aligned}
+\dot{x} &= \sigma (y - x), \\
+\dot{y} &= x(\rho - z) - y, \\
+\dot{z} &= xy - \beta z,
+\end{aligned}
+\end{equation}
+where $\sigma = 10$, $\rho = 28$, and $\beta = 8/3$ are the standard chaotic parameters. The system is integrated using a fixed time step $\Delta t = 0.1 \,\text{s}$ with a fourth-order Runge–Kutta method. The resulting trajectories exhibit chaotic behavior and are commonly used as benchmarks for nonlinear dynamical system identification.
+
+\paragraph{Kármán Vortex.}
+The Kármán vortex street dataset is generated from the two-dimensional incompressible Navier–Stokes equations, which describe the velocity field $(u,v)$ and pressure $p$ of a viscous fluid:
+\begin{equation}
+\begin{aligned}
+\frac{\partial u}{\partial t} + u \frac{\partial u}{\partial x} + v \frac{\partial u}{\partial y} &= -\frac{\partial p}{\partial x} + \frac{1}{Re} \left( \frac{\partial^2 u}{\partial x^2} + \frac{\partial^2 u}{\partial y^2} \right), \\
+\frac{\partial v}{\partial t} + u \frac{\partial v}{\partial x} + v \frac{\partial v}{\partial y} &= -\frac{\partial p}{\partial y} + \frac{1}{Re} \left( \frac{\partial^2 v}{\partial x^2} + \frac{\partial^2 v}{\partial y^2} \right), \\
+\frac{\partial u}{\partial x} + \frac{\partial v}{\partial y} &= 0,
+\end{aligned}
+\end{equation}
+where $Re = U L / \nu$ is the Reynolds number, defined with characteristic velocity $U$, length $L$, and kinematic viscosity $\nu$. The training dataset covers flows with $Re \in [40,1000]$, while the test dataset focuses on $Re=1000$. The flow is simulated around a cylinder, producing the characteristic alternating vortex shedding pattern. The domain is discretized on a $64 \times 64$ grid, with time step $\Delta t = 0.001 \,\text{s}$, and both $u$ and $v$ velocity components are recorded at each grid point (data from \citep{Luo2023cfdbench}).
+
+\paragraph{Dam Flow.} 
+The dam flow dataset is also generated from the two-dimensional incompressible Navier–Stokes equations, using the same formulation as in the Kármán vortex case. The training dataset spans $Re \in [40,1000]$ and the test dataset uses $Re=1000$. The flow is initialized in a rectangular channel with a fixed dam obstacle, where an imposed inlet velocity drives the fluid past the dam-like structure, generating a simple wake pattern downstream. The domain is discretized on a $64 \times 64$ spatial grid, with temporal resolution $\Delta t = 0.1 \,\text{s}$ (data from \citep{Luo2023cfdbench}).
+
+
+The ERA5 dataset is a global atmospheric reanalysis produced by the European Centre for Medium-Range Weather Forecasts (ECMWF), providing a physically consistent estimate of the large-scale circulation from 1940 to the present \citep{Hersbach2020era5}. The physic state consists of five channels: 500,hPa geopotential, 850,hPa temperature, 700,hPa specific humidity, and 850,hPa wind components in the zonal and meridional directions. We train all baselines from 1979-01-01 to 2016-01-01 and test after 2018-01-01 (data from \citep{Rasp2024weatherbench2}). Illustrations are provided in Figure~\ref{fig:examples_of_phisical_sim}.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1.0\linewidth]{physical_example.pdf}
+    \vspace{-1.5em}
+    \caption{Examples of physical simulation: (a).Lorenz 63, (b).Kármán Vortex, (c).Dam Flow, (d).ERA5}
+    \label{fig:examples_of_phisical_sim}
+\end{figure}
+
+
+\subsubsection{Visual Inputs}
+
+\paragraph{Planar System} 
+In this task the main goal is to navigate an agent in a surrounded area on a 2D plane \citep{breivik2008guidance}, whose goal is to navigate from a corner to the opposite one, while avoiding the six obstacles in this area. The system is observed through a set of $40 \times 40$ pixel images taken from the top view, which specifies the agent’s location in the area. Actions are two-dimensional and specify the $x-y$ direction of the agent’s movement, and given these actions the next positional state of the agent is generated by a deterministic underlying (unobservable) state evolution function. \textbf{Start State}: one of three corners (excluding bottom-right). \textbf{Goal State}: bottom-right corner. \textbf{Agent’s Objective}: agent is within Euclidean distance of 2 from the goal state.
+
+\paragraph{Inverted Pendulum — SwingUp \& Balance} 
+This is the classic problem of controlling an inverted pendulum \citep{furuta1991swingup} from $48 \times 48$ pixel images. The goal of this task is to swing up an under-actuated pendulum from the downward resting position (pendulum hanging down) to the top position and to balance it. The underlying state $s_t$ of the system has two dimensions: angle and angular velocity, which is unobservable. The control (action) is 1-dimensional, which is the torque applied to the joint of the pendulum. To keep the Markovian property in the observation (image) space, similar to the setting in E2C, each observation $x_t$ contains two images generated from consecutive time-frames (from current time and previous time). This is because each image only shows the position of the pendulum and does not contain any information about the velocity. \textbf{Start State}: Pole is resting down (SwingUp), or randomly sampled in $\pm \pi/6$ (Balance). \textbf{Agent’s Objective}: pole’s angle is within $\pm \pi/6$ from an upright position.
+
+\paragraph{CartPole} 
+This is the visual version of the classic task of controlling a cart-pole system \citep{geva1993cartpole}. The goal in this task is to balance a pole on a moving cart, while the cart avoids hitting the left and right boundaries. The control (action) is 1-dimensional, which is the force applied to the cart. The underlying state of the system $s_t$ is 4-dimensional, which indicates the angle and angular velocity of the pole, as well as the position and velocity of the cart. Similar to the inverted pendulum, in order to maintain the Markovian property the observation $x_t$ is a stack of two $80 \times 80$ pixel images generated from consecutive time-frames. \textbf{Start State}: Pole is randomly sampled in $\pm \pi/6$. \textbf{Agent’s Objective}: pole’s angle is within $\pm \pi/10$ from an upright position.
+
+\paragraph{3-link Manipulator — SwingUp \& Balance} 
+The goal in this task is to move a 3-link manipulator from the initial position (which is the downward resting position) to a final position (which is the top position) and balance it. In the 1-link case, this experiment is reduced to inverted pendulum. In the 2-link case the setup is similar to that of acrobot \cite{}, except that we have torques applied to all intermediate joints, and in the 3-link case the setup is similar to that of the 3-link planar robot arm domain that was used in the E2C paper, except that the robotic arms are modeled by simple rectangular rods (instead of real images of robot arms), and our task success criterion requires both the swing-up (manipulate to final position) and balance. The underlying (unobservable) state $s_t$ of the system is 6-dimensional, which indicates the relative angular velocities and relative angles of the 3 links. \textbf{Start State}: Pole is resting down. \textbf{Agent’s Objective}: pole’s angle is within $\pm \pi/6$ from an upright position.
+
+The control algorithm is linear quadratic control in the latent space and the corresponding control horizon follows the setting in \citep{levine2019prediction}.
+
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.7\linewidth]{control_task.pdf}
+    \caption{The examples of visual inputs: Planar (left), Pendulum (middle), Cartpole (right). }
+    \label{fig:control_task_image}
+\end{figure}
+
+
+\subsubsection{Graph-structured Dynamics For Simulation}
+
+In the numerical experiments, we adopt the graph environments introduced in \citep{li2019learning}, where interactions among objects are modeled differently according to their connection types and physical properties. These environments are designed to capture diverse interaction dynamics through a Koopman representation (see illustrative examples in Figure~\ref{fig:graph_visual}), as detailed below:
+
+In the Rope environment, the top mass is fixed in height and is treated differently from the other masses, resulting in two distinct types of self-interactions: one for the top mass and one for non-top masses. Additionally, there are eight types of interactions between different objects. Each mass is represented by four dimensions, encoding its state and velocity. Objects in a relation can be either the top mass or a non-top mass, yielding four possible combinations. Interactions may occur between adjacent masses or between masses that are two hops apart. In total, this gives $4 \times 2 = 8$ types of interactions between different objects. Training is performed on environments with $5$–$9$ objects, while testing uses $10$–$14$ objects. The overall dimensionality ranges from $40$ to $56$.
+
+In the Soft environments, quadrilaterals are categorized into four types: rigid, soft, actuated, and fixed, each with its own form of self-interaction. For interactions between objects, an edge is defined between two quadrilaterals only if they are connected at a point or along an edge. Connections from different directions are treated as distinct relations, with eight possible directions: up, down, left, right, up-left, down-left, up-right, and down-right. Relation types also encode the category of the receiving object, resulting in a total of $(8+1)\times 4 = 36$ possible relation types between objects. Training is conducted on environments with $5$–$9$ quadrilaterals, while testing uses $10$–$14$ quadrilaterals. Each quadrilateral is represented by a 16-dimensional vector, giving a total dimensionality ranging from $160$ to $224$. 
+
+In noisy environment, the additive noise is zero-mean Gaussian with standard deviation equal to 10\% of the standard deviation of the observation data.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\linewidth]{graph_visual.pdf}
+    \caption{Examples of ropes and soft robots. Left: Blue nodes denote the initial states of Rope 1 and Rope 2, while orange nodes show their states after 40 time steps. Right: Interconnected quadrilaterals indicate the initial states, and the boxes represent the states of the soft robots after 40 time steps. The second soft robot (Soft 2) can be abstracted as a graph structure shown on the right.}
+    \label{fig:graph_visual}
+\end{figure}
+
+\subsection{Implementation Algorithm of Three Tasks}
+\begin{table}[h]
+\centering
+\caption{Model structures across experimental environments. 
+Here, $\mathcal{K} z_t + B a_t$ denotes a controlled latent transition with linear control input $a_t$ (Visual Inputs case). 
+$\mathcal{K}(A)$ denotes an adjacency-conditioned Koopman operator, corresponding to a shared Koopman composition modulated by the adjacency matrix $A$ (i.e., $\mathcal{K}(A) \coloneqq A \otimes \mathcal{K}$ in graph environments; see \citet[Page~4]{li2019learning} for details).}
+\label{tab:model_variants}
+\begin{tabular}{p{3cm} p{1.5cm} p{8cm}}
+\toprule
+\textbf{Environment} & \textbf{Structure} & \textbf{Key Features} \\
+\midrule
+Physical Simulation  
+& AE (\ref{pesudocode:ae})
+& $z_{t+1} = \mathcal{K} z_t$; reconstruction; Koopman linear forward; InfoNCE; von Neumann entropy \\
+\midrule
+Visual Inputs (Control Tasks) 
+& VAE (\ref{pesudocode:vae})
+& $z_{t+1} = \mathcal{K} z_t + B a_t + \epsilon$ (Linear Gaussian); VAE ELBO; reconstruction; InfoNCE; von Neumann entropy \\
+\midrule
+Graph-structured Dynamics
+& AE (\ref{pesudocode:ae})
+& $z_{t+1} = \mathcal{K}(A) z_t$ (adjacency-conditioned); reconstruction; InfoNCE; von Neumann entropy \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\clearpage
+\subsection{More Experimental Results} \label{append:more_results}
+
+\subsubsection{Physical Simulations} \label{append:physical_sim}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.6\linewidth]{prediction_xyz_spatial_corr.pdf}
+    \caption{Comparison of sampled spatial distributions based on $100000-$step data for Lorenz 63. \textbf{Green} denotes the ground-truth distribution from the physical solver, and \textbf{purple} denotes samples generated by our method. Across both marginal and joint projections, the two distributions exhibit close agreement, demonstrating that our empirical results capture the underlying dynamics.}
+    \label{fig:placeholder}
+\end{figure}
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\linewidth]{physical_sim_karmen.pdf}
+    \caption{Comparison of continuous predictions for the Kármán vortex street starting from $t=0.7s$. Ground truth are contrasted with predictions from VAE, KAE, KKR, PFNN, and our method. Error maps in the lower panels demonstrate that, compared with other models, our method achieves the closest agreement and effectively prevents collapse in the predicted fields.}
+    \label{fig:physical_sim_karmen}
+\end{figure}
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\linewidth]{physical_sim_dam.pdf}
+    \caption{Comparison of continuous predictions for the dam flow starting from $t=5.0s$. Ground truth are contrasted with predictions from VAE, KAE, KKR, and our method. Error maps in the lower panels demonstrate that, compared with other models, our method more effectively prevents collapse in the predicted fields for dam flow.}
+    \label{ffig:physical_sim_dam}
+\end{figure}
+
+% \begin{table*}[ht]
+% \centering
+% \caption{Per-channel performance comparison on ERA5 forecasting. $N$-NRMSE and $N$-SSIM denote errors at $N$ prediction steps; values in parentheses indicate the standard deviation across test samples.}
+% \label{tab:era5_channel}
+% \scriptsize
+% \resizebox{\textwidth}{!}{
+% \begin{tabular}{llccccc}
+% \toprule
+% Channel & Metric & VAE & KAE & KKR & PFNN & Ours \\
+% \midrule
+% \multirow{6}{*}{Geopotential}
+%   & 5-NRMSE   & -- & 0.058 (0.020) & 0.061 (0.027) & \cellcolor{second}{0.046 (0.012)} & \cellcolor{best}{\textbf{0.023 (0.005)}} \\
+%   & 10-NRMSE  & -- & 0.068 (0.018) & 0.074 (0.026) & \cellcolor{second}{0.062 (0.018)} & \cellcolor{best}{\textbf{0.032 (0.010)}} \\
+%   & 50-NRMSE  & -- & 0.157 (0.071) & \cellcolor{second}{0.082 (0.025)} & \cellcolor{second}{0.082 (0.016)} & \cellcolor{best}{\textbf{0.075 (0.017)}} \\
+%   & 5-SSIM    & -- & 0.860 (0.054) & 0.852 (0.064) & \cellcolor{second}{0.882 (0.036)} & \cellcolor{best}{\textbf{0.964 (0.011)}} \\
+%   & 10-SSIM   & -- & 0.836 (0.051) & 0.820 (0.065) & \cellcolor{second}{0.848 (0.052)} & \cellcolor{best}{\textbf{0.943 (0.028)}} \\
+%   & 50-SSIM   & -- & 0.665 (0.195) & \cellcolor{second}{0.790 (0.049)} & 0.765 (0.055) & \cellcolor{best}{\textbf{0.806 (0.039)}} \\
+% \midrule
+% \multirow{6}{*}{Temperature}
+%   & 5-NRMSE   & -- & 0.049 (0.019) & 0.052 (0.032) & \cellcolor{second}{0.040 (0.009)} & \cellcolor{best}{\textbf{0.022 (0.003)}} \\
+%   & 10-NRMSE  & -- & 0.056 (0.017) & 0.064 (0.028) & \cellcolor{second}{0.051 (0.015)} & \cellcolor{best}{\textbf{0.026 (0.006)}} \\
+%   & 50-NRMSE  & -- & 0.114 (0.054) & 0.074 (0.030) & \cellcolor{second}{0.067 (0.018)} & \cellcolor{best}{\textbf{0.063 (0.019)}} \\
+%   & 5-SSIM    & -- & 0.866 (0.046) & 0.862 (0.058) & \cellcolor{second}{0.888 (0.026)} & \cellcolor{best}{\textbf{0.956 (0.008)}} \\
+%   & 10-SSIM   & -- & 0.844 (0.044) & 0.829 (0.063) & \cellcolor{second}{0.859 (0.042)} & \cellcolor{best}{\textbf{0.942 (0.019)}} \\
+%   & 50-SSIM   & -- & 0.671 (0.216) & 0.802 (0.059) & \cellcolor{second}{0.803 (0.051)} & \cellcolor{best}{\textbf{0.825 (0.042)}} \\
+% \midrule
+% \multirow{6}{*}{Humidity}
+%   & 5-NRMSE   & -- & 0.064 (0.029) & 0.069 (0.043) & \cellcolor{second}{0.055 (0.011)} & \cellcolor{best}{\textbf{0.031 (0.003)}} \\
+%   & 10-NRMSE  & -- & 0.077 (0.027) & 0.085 (0.041) & \cellcolor{second}{0.070 (0.020)} & \cellcolor{best}{\textbf{0.038 (0.006)}} \\
+%   & 50-NRMSE  & -- & 0.165 (0.086) & 0.093 (0.040) & \cellcolor{second}{0.088 (0.021)} & \cellcolor{best}{\textbf{0.084 (0.028)}} \\
+%   & 5-SSIM    & -- & 0.859 (0.056) & 0.856 (0.076) & \cellcolor{second}{0.880 (0.026)} & \cellcolor{best}{\textbf{0.954 (0.008)}} \\
+%   & 10-SSIM   & -- & 0.818 (0.064) & 0.805 (0.095) & \cellcolor{second}{0.835 (0.053)} & \cellcolor{best}{\textbf{0.933 (0.021)}} \\
+%   & 50-SSIM   & -- & 0.663 (0.220) & \cellcolor{second}{0.781 (0.087)} & 0.776 (0.058) & \cellcolor{best}{\textbf{0.799 (0.057)}} \\
+% \midrule
+% \multirow{6}{*}{Wind $u$ direction}
+%   & 5-NRMSE   & -- & 0.055 (0.009) & 0.056 (0.011) & \cellcolor{second}{0.053 (0.006)} & \cellcolor{best}{\textbf{0.032 (0.006)}} \\
+%   & 10-NRMSE  & -- & \cellcolor{second}{0.059 (0.008)} & 0.061 (0.009) & 0.060 (0.008) & \cellcolor{best}{\textbf{0.041 (0.010)}} \\
+%   & 50-NRMSE  & -- & 0.096 (0.030) & \cellcolor{second}{0.063 (0.006)} & 0.070 (0.007) & \cellcolor{best}{\textbf{0.062 (0.005)}} \\
+%   & 5-SSIM    & -- & 0.505 (0.122) & 0.502 (0.141) & \cellcolor{second}{0.537 (0.084)} & \cellcolor{best}{\textbf{0.814 (0.051)}} \\
+%   & 10-SSIM   & -- & \cellcolor{second}{0.433 (0.115)} & 0.415 (0.134) & 0.424 (0.120) & \cellcolor{best}{\textbf{0.721 (0.107)}} \\
+%   & 50-SSIM   & -- & 0.300 (0.251) & \cellcolor{second}{0.361 (0.085)} & 0.267 (0.100) & \cellcolor{best}{\textbf{0.382 (0.068)}} \\
+% \midrule
+% \multirow{6}{*}{Wind $v$ direction}
+%   & 5-NRMSE   & -- & 0.051 (0.008) & 0.051 (0.009) & \cellcolor{second}{0.050 (0.006)} & \cellcolor{best}{\textbf{0.031 (0.005)}} \\
+%   & 10-NRMSE  & -- & \cellcolor{second}{0.054 (0.007)} & \cellcolor{second}{0.054 (0.008)} & 0.055 (0.007) & \cellcolor{best}{\textbf{0.040 (0.010)}} \\
+%   & 50-NRMSE  & -- & 0.060 (0.006) & \cellcolor{best}{\textbf{0.057 (0.005)}} & 0.087 (0.025) & \cellcolor{best}{\textbf{0.057 (0.005)}} \\
+%   & 5-SSIM    & -- & 0.240 (0.159) & 0.247 (0.183) & \cellcolor{second}{0.300 (0.091)} & \cellcolor{best}{\textbf{0.649 (0.098)}} \\
+%   & 10-SSIM   & -- & 0.163 (0.133) & 0.163 (0.150) & \cellcolor{second}{0.208 (0.101)} & \cellcolor{best}{\textbf{0.499 (0.163)}} \\
+%   & 50-SSIM   & -- & \cellcolor{second}{0.105 (0.077)} & 0.093 (0.082) & \cellcolor{best}{\textbf{0.165 (0.193)}} & 0.094 (0.074) \\
+% \bottomrule
+% \end{tabular}
+% }
+% \end{table*}
+
+
+\begin{table*}[ht]
+\centering
+\caption{Per-channel performance comparison on ERA5 weather forecasting. $N$-NRMSE and $N$-SSIM denote errors at $N$ prediction steps; values in parentheses indicate the standard deviation across test samples. Even under the highly stochastic and high-dimensional ERA5 weather dynamics, our approach outperforms all baselines across both short-term and long-term prediction horizons.}
+\label{tab:era5_channel}
+\scriptsize
+
+{
+\resizebox{\textwidth}{!}{
+\begin{tabular}{llcccc}
+\toprule
+Channel & Metric & KAE & KKR & PFNN & Ours \\
+\midrule
+\multirow{6}{*}{Geopotential}
+  & 5-NRMSE   & 0.058 (0.020) & 0.061 (0.027) & \cellcolor{second}{0.046 (0.012)} & \cellcolor{best}{\textbf{0.023 (0.005)}} \\
+  & 10-NRMSE  & 0.068 (0.018) & 0.074 (0.026) & \cellcolor{second}{0.062 (0.018)} & \cellcolor{best}{\textbf{0.032 (0.010)}} \\
+  & 50-NRMSE  & 0.157 (0.071) & \cellcolor{second}{0.082 (0.025)} & 0.082 (0.016) & \cellcolor{best}{\textbf{0.075 (0.017)}} \\
+  & 5-SSIM    & 0.860 (0.054) & 0.852 (0.064) & \cellcolor{second}{0.882 (0.036)} & \cellcolor{best}{\textbf{0.964 (0.011)}} \\
+  & 10-SSIM   & 0.836 (0.051) & 0.820 (0.065) & \cellcolor{second}{0.848 (0.052)} & \cellcolor{best}{\textbf{0.943 (0.028)}} \\
+  & 50-SSIM   & 0.665 (0.195) & \cellcolor{second}{0.790 (0.049)} & 0.765 (0.055) & \cellcolor{best}{\textbf{0.806 (0.039)}} \\
+\midrule
+\multirow{6}{*}{Temperature}
+  & 5-NRMSE   & 0.049 (0.019) & 0.052 (0.032) & \cellcolor{second}{0.040 (0.009)} & \cellcolor{best}{\textbf{0.022 (0.003)}} \\
+  & 10-NRMSE  & 0.056 (0.017) & 0.064 (0.028) & \cellcolor{second}{0.051 (0.015)} & \cellcolor{best}{\textbf{0.026 (0.006)}} \\
+  & 50-NRMSE  & 0.114 (0.054) & 0.074 (0.030) & \cellcolor{second}{0.067 (0.018)} & \cellcolor{best}{\textbf{0.063 (0.019)}} \\
+  & 5-SSIM    & 0.866 (0.046) & 0.862 (0.058) & \cellcolor{second}{0.888 (0.026)} & \cellcolor{best}{\textbf{0.956 (0.008)}} \\
+  & 10-SSIM   & 0.844 (0.044) & 0.829 (0.063) & \cellcolor{second}{0.859 (0.042)} & \cellcolor{best}{\textbf{0.942 (0.019)}} \\
+  & 50-SSIM   & 0.671 (0.216) & 0.802 (0.059) & \cellcolor{second}{0.803 (0.051)} & \cellcolor{best}{\textbf{0.825 (0.042)}} \\
+\midrule
+\multirow{6}{*}{Humidity}
+  & 5-NRMSE   & 0.064 (0.029) & 0.069 (0.043) & \cellcolor{second}{0.055 (0.011)} & \cellcolor{best}{\textbf{0.031 (0.003)}} \\
+  & 10-NRMSE  & 0.077 (0.027) & 0.085 (0.041) & \cellcolor{second}{0.070 (0.020)} & \cellcolor{best}{\textbf{0.038 (0.006)}} \\
+  & 50-NRMSE  & 0.165 (0.086) & 0.093 (0.040) & \cellcolor{second}{0.088 (0.021)} & \cellcolor{best}{\textbf{0.084 (0.028)}} \\
+  & 5-SSIM    & 0.859 (0.056) & 0.856 (0.076) & \cellcolor{second}{0.880 (0.026)} & \cellcolor{best}{\textbf{0.954 (0.008)}} \\
+  & 10-SSIM   & 0.818 (0.064) & 0.805 (0.095) & \cellcolor{second}{0.835 (0.053)} & \cellcolor{best}{\textbf{0.933 (0.021)}} \\
+  & 50-SSIM   & 0.663 (0.220) & \cellcolor{second}{0.781 (0.087)} & 0.776 (0.058) & \cellcolor{best}{\textbf{0.799 (0.057)}} \\
+\midrule
+\multirow{6}{*}{Wind $u$ direction}
+  & 5-NRMSE   & 0.055 (0.009) & 0.056 (0.011) & \cellcolor{second}{0.053 (0.006)} & \cellcolor{best}{\textbf{0.032 (0.006)}} \\
+  & 10-NRMSE  & \cellcolor{second}{0.059 (0.008)} & 0.061 (0.009) & 0.060 (0.008) & \cellcolor{best}{\textbf{0.041 (0.010)}} \\
+  & 50-NRMSE  & 0.096 (0.030) & \cellcolor{second}{0.063 (0.006)} & 0.070 (0.007) & \cellcolor{best}{\textbf{0.062 (0.005)}} \\
+  & 5-SSIM    & 0.505 (0.122) & 0.502 (0.141) & \cellcolor{second}{0.537 (0.084)} & \cellcolor{best}{\textbf{0.814 (0.051)}} \\
+  & 10-SSIM   & \cellcolor{second}{0.433 (0.115)} & 0.415 (0.134) & 0.424 (0.120) & \cellcolor{best}{\textbf{0.721 (0.107)}} \\
+  & 50-SSIM   & 0.300 (0.251) & \cellcolor{second}{0.361 (0.085)} & 0.267 (0.100) & \cellcolor{best}{\textbf{0.382 (0.068)}} \\
+\midrule
+\multirow{6}{*}{Wind $v$ direction}
+  & 5-NRMSE   & 0.051 (0.008) & 0.051 (0.009) & \cellcolor{second}{0.050 (0.006)} & \cellcolor{best}{\textbf{0.031 (0.005)}} \\
+  & 10-NRMSE  & \cellcolor{second}{0.054 (0.007)} & \cellcolor{second}{0.054 (0.008)} & 0.055 (0.007) & \cellcolor{best}{\textbf{0.040 (0.010)}} \\
+  & 50-NRMSE  & 0.060 (0.006) & \cellcolor{best}{\textbf{0.057 (0.005)}} & 0.087 (0.025) & \cellcolor{best}{\textbf{0.057 (0.005)}} \\
+  & 5-SSIM    & 0.240 (0.159) & 0.247 (0.183) & \cellcolor{second}{0.300 (0.091)} & \cellcolor{best}{\textbf{0.649 (0.098)}} \\
+  & 10-SSIM   & 0.163 (0.133) & 0.163 (0.150) & \cellcolor{second}{0.208 (0.101)} & \cellcolor{best}{\textbf{0.499 (0.163)}} \\
+  & 50-SSIM   & \cellcolor{second}{0.105 (0.077)} & 0.093 (0.082) & \cellcolor{best}{\textbf{0.165 (0.193)}} & 0.094 (0.074) \\
+\bottomrule
+\end{tabular}
+}
+}
+\end{table*}
+
+
+% \begin{table}[t]
+%     \centering
+%     \caption{Training time statistics for different models and tasks. Epoch times are reported as mean $\pm$ std (in seconds). For \textit{Ours}, InfoNCE and entropy rows report the total per-epoch time (in seconds).}
+%     \scriptsize
+%     \resizebox{\textwidth}{!}{
+%     \begin{tabular}{llccccc}
+%         \toprule
+%         Task & Metric & VAE & KAE & KKR & PFNN & Ours \\
+%         \midrule
+%         \multirow{3}{*}{Kármán vortex}
+%             & Epoch time (s)
+%                 & $172.94 \pm 4.11$
+%                 & $195.26 \pm 3.47$
+%                 & $186.47 \pm 1.86$
+%                 & $182.52 \pm 2.53$
+%                 & $201.23 \pm 1.07$ \\
+%             & InfoNCE time (s)
+%                 & -- & -- & -- & -- & $13.78 \pm 0.93$ \\
+%             & Entropy time (s)
+%                 & -- & -- & -- & -- & $0.97 \pm 0.13$ \\
+%         \midrule
+%         \multirow{3}{*}{Dam Flow}
+%             & Epoch time (s)
+%                 & $16.21 \pm 0.29$
+%                 & $16.95 \pm 0.33$
+%                 & $17.48 \pm 0.29$
+%                 & -- 
+%                 & $18.92 \pm 0.36$ \\
+%             & InfoNCE time (s)
+%                 & -- & -- & -- & -- & $0.76 \pm 0.04$ \\
+%             & Entropy time (s)
+%                 & -- & -- & -- & -- & $0.56 \pm 0.08$ \\
+%         \midrule
+%         \multirow{3}{*}{ERA5}
+%             & Epoch time (s)
+%                 & --
+%                 & $240.20 \pm 0.52$
+%                 & $224.95 \pm 0.54$
+%                 & $242.33 \pm 0.71$
+%                 & $253.24 \pm 2.05$ \\
+%             & InfoNCE time (s)
+%                 & -- & -- & -- & -- & $15.09 \pm 0.80$ \\
+%             & Entropy time (s)
+%                 & -- & -- & -- & -- & $7.43 \pm 0.64$ \\
+%         \bottomrule
+%     \end{tabular}
+% }
+% \end{table}
+
+\begin{table}[t]
+\centering
+\caption{Training time statistics for different models and tasks. Epoch times are reported as mean $\pm$ std (in seconds). For \textit{Ours}, InfoNCE and entropy (von Neumann entropy) rows correspond to the total per-epoch computation. Notably, the overhead introduced by InfoNCE and von Neumann entropy is marginal, accounting for only a small percentage of the total training time.}.
+\scriptsize
+
+{
+\resizebox{\textwidth}{!}{
+\begin{tabular}{llccccc}
+\toprule
+Task & Metric & VAE & KAE & KKR & PFNN & Ours \\
+\midrule
+\multirow{3}{*}{Kármán vortex}
+    & Epoch time (s)
+        & $172.94 \pm 4.11$
+        & $195.26 \pm 3.47$
+        & $186.47 \pm 1.86$
+        & $182.52 \pm 2.53$
+        & $201.23 \pm 1.07$ \\
+    & InfoNCE time (s)
+        & -- & -- & -- & -- & $13.78 \pm 0.93$ \\
+    & Entropy time (s)
+        & -- & -- & -- & -- & $0.97 \pm 0.13$ \\
+\midrule
+\multirow{3}{*}{Dam Flow}
+    & Epoch time (s)
+        & $16.21 \pm 0.29$
+        & $16.95 \pm 0.33$
+        & $17.48 \pm 0.29$
+        & -- 
+        & $18.92 \pm 0.36$ \\
+    & InfoNCE time (s)
+        & -- & -- & -- & -- & $0.76 \pm 0.04$ \\
+    & Entropy time (s)
+        & -- & -- & -- & -- & $0.56 \pm 0.08$ \\
+\midrule
+\multirow{3}{*}{ERA5}
+    & Epoch time (s)
+        & --
+        & $240.20 \pm 0.52$
+        & $224.95 \pm 0.54$
+        & $242.33 \pm 0.71$
+        & $253.24 \pm 2.05$ \\
+    & InfoNCE time (s)
+        & -- & -- & -- & -- & $15.09 \pm 0.80$ \\
+    & Entropy time (s)
+        & -- & -- & -- & -- & $7.43 \pm 0.64$ \\
+\bottomrule
+\end{tabular}
+}
+}
+\end{table}
+
+
+
+\clearpage 
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.98\linewidth]{era5_0.pdf}
+    \caption{Comparison of continuous predictions for the global geopotential starting from $2018-01-01-00:00$ to $2018-01-08-08:00$. Ground truth are contrasted with predictions from KAE, KKR, PFNN,  and our method. Error maps in the lower panels demonstrate that, compared with other models, showing with more stable and accurate results of our model.}
+    \label{fig:era5_0}
+\end{figure}
+
+\clearpage 
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.98\linewidth]{era5_1.pdf}
+    \caption{Comparison of continuous predictions for the global temperature starting from $2018-01-01-00:00$ to $2018-01-08-08:00$. Ground truth are contrasted with predictions from  KAE, KKR, PFNN, and our method. Error maps in the lower panels demonstrate that, compared with other models, showing with more stable and accurate results of our model.}
+    \label{fig:era5_1}
+\end{figure}
+
+\clearpage 
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.98\linewidth]{era5_3.pdf}
+    \caption{Comparison of continuous predictions for the global $u-$direction wind starting from $2018-01-01-00:00$ to $2018-01-08-08:00$. Ground truth are contrasted with predictions from KAE, KKR, PFNN, and our method. Error maps in the lower panels demonstrate that, compared with other models, showing with more stable and accurate results of our model.}
+    \label{fig:era5_3}
+\end{figure}
+
+
+\clearpage 
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.98\linewidth]{era5_4.pdf}
+    \caption{Comparison of continuous predictions for the global $v-$direction wind starting from $2018-01-01-00:00$ to $2018-01-08-08:00$. Ground truth are contrasted with predictions from KAE, KKR, PFNN, and our method. Error maps in the lower panels demonstrate that, compared with other models, showing with more stable and accurate results of our model.}
+    \label{fig:era5_4}
+\end{figure}
+
+\begin{figure}[t]
+    \centering
+    
+    % ---------- (a) ----------
+    \begin{subfigure}{\linewidth}
+        \centering
+        \begin{minipage}[c]{0.06\linewidth}
+            \centering
+            \textbf{(a)}
+        \end{minipage}%
+        \begin{minipage}[c]{0.9\linewidth}
+            \centering
+            \includegraphics[width=\linewidth]{eigen_gamma_compare.pdf}
+        \end{minipage}
+        \caption{}
+        \label{fig:eigen_gamma_compare}
+    \end{subfigure}
+    
+    \vspace{0.2em}
+    
+    % ---------- (b) ----------
+    \begin{subfigure}{\linewidth}
+        \centering
+        \begin{minipage}[c]{0.06\linewidth}
+            \centering
+            \textbf{(b)}
+        \end{minipage}%
+        \begin{minipage}[c]{0.9\linewidth}
+            \centering
+            \includegraphics[width=\linewidth]{eigen_heatmap_without_gamma.pdf}
+        \end{minipage}
+        \caption{}
+        \label{fig:eigen_heatmap_without_gamma}
+    \end{subfigure}
+    
+    \vspace{0.2em}
+    
+    % ---------- (c) ----------
+    \begin{subfigure}{\linewidth}
+        \centering
+        \begin{minipage}[c]{0.06\linewidth}
+            \centering
+            \textbf{(c)}
+        \end{minipage}%
+        \begin{minipage}[c]{0.9\linewidth}
+            \centering
+            \includegraphics[width=\linewidth]{eigen_heatmap_with_gamma.pdf}
+        \end{minipage}
+        \caption{}
+        \label{fig:eigen_heatmap_with_gamma}
+    \end{subfigure}
+    
+    \caption{Comparison between $\gamma = 0.0$ and $\gamma = 0.5$ on the physical simulation task with latent dimension $32$.
+\textbf{(a)} Evolution of the eigenvalue spectrum over training epochs.
+\textbf{(b)} Heatmap of the latent covariance matrix for $\gamma = 0.0$ across epochs.
+\textbf{(c)} Heatmap of the latent covariance matrix for $\gamma = 0.5$ across epochs.
+With the addition of the von Neumann entropy regularizer, two clear effects emerge during training.
+First, the latent covariance matrix no longer collapses to a few dominant modes: the eigenvalue distribution becomes more uniform and remains close to full rank throughout optimization (see \textbf{(a)}), indicating that the model learns a richer set of modes rather than compressing them into a low-dimensional subspace.
+Second, the covariance structure transitions from highly sparse (when $\gamma = 0$) to dense and full-rank under entropy regularization (from \textbf{(b)} to \textbf{(c)}), verifying our theoretical prediction in Proposition~\ref{claim:effective_dim}.}
+\end{figure}
+
+\begin{figure}[t]
+    \centering
+
+    % ---------- 3 columns: (a), (b), (c) ----------
+    \begin{subfigure}[b]{0.32\linewidth}
+        \centering
+        \begin{minipage}[c]{0.12\linewidth}
+            \centering
+            \textbf{(a)}
+        \end{minipage}%
+        \begin{minipage}[c]{0.85\linewidth}
+            \centering
+            \includegraphics[width=\linewidth]{entropy_loss_curve_cylinder.pdf}
+        \end{minipage}
+        \caption{}
+        % \label{fig:entropy_cylinder}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.32\linewidth}
+        \centering
+        \begin{minipage}[c]{0.12\linewidth}
+            \centering
+            \textbf{(b)}
+        \end{minipage}%
+        \begin{minipage}[c]{0.85\linewidth}
+            \centering
+            \includegraphics[width=\linewidth]{entropy_loss_curve_dam.pdf}
+        \end{minipage}
+        \caption{}
+        % \label{fig:entropy_dam}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.32\linewidth}
+        \centering
+        \begin{minipage}[c]{0.12\linewidth}
+            \centering
+            \textbf{(c)}
+        \end{minipage}%
+        \begin{minipage}[c]{0.85\linewidth}
+            \centering
+            \includegraphics[width=\linewidth]{entropy_loss_curve_era5.pdf}
+        \end{minipage}
+        \caption{}
+        % \label{fig:entropy_era5}
+    \end{subfigure}
+
+    \caption{Visualization of the von Neumann entropy regularization loss and the total training loss over epochs for the physical simulation tasks. The stable behavior of both the total loss and the von Neumann entropy loss indicates that our training procedure is numerically stable and robust across different systems.}
+\end{figure}
+
+
+% \begin{figure}
+%     \centering
+%     \includegraphics[width=0.85\linewidth]{entropy_loss_curve_dam.pdf}
+%     \caption{Comparison between the entropy regularization loss and the total training loss on the Dam Flow dataset over training epochs.}
+% \end{figure}
+
+
+\clearpage
+\subsubsection{Visual Perception} \label{appendi:visual_input_result}
+
+\begin{table}[H]
+\centering
+% \scriptsize
+\caption{Percentage to Goal (\%) for different algorithms under noisy rollout. A higher value indicates that the system reaches closer to the goal within a fixed number of control steps.}
+\label{tab:control_performance_1}
+\begin{tabular}{l|cccc}
+\toprule
+Domain & E2C & PCC & KAE & Ours \\
+\midrule
+Planar $(n = 40\times 40)$
+  & 6.2 (1.5) & \cellcolor{second}{34.8 (3.6)} & 5.1 (1.2) & \cellcolor{best}{\textbf{39.6 (2.8)}} \\
+Pendulum $(n = 48\times 40 \times 2)$
+  & 45.5 (3.9) & \cellcolor{second}{59.8 (3.2)} & 26.3 (2.8) & \cellcolor{best}{\textbf{62.7 (2.9)}} \\
+Cartpole $(n = 80\times 80 \times 2)$
+  & 8.1 (1.6) & 53.1 (3.5) & \cellcolor{second}{57.2 (3.8)} & \cellcolor{best}{\textbf{61.9 (3.0)}} \\
+3-link $(n = 80\times 80 \times 2)$
+  & 5.0 (1.0) & \cellcolor{best}{\textbf{21.3 (1.9)}} & 2.1 (0.6) & \cellcolor{second}{19.5 (2.0)}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Percentage to Goal (\%) for different algorithms under noiseless rollouts.}
+\label{tab:control_performance_2}
+\begin{tabular}{l|cccc}
+\toprule
+Domain & E2C & PCC & KAE & Ours \\
+\midrule
+Planar $(n = 40\times 40)$
+  & 37.8 (3.5) & \cellcolor{second}{71.4 (0.6)} & 12.2 (1.4) & \cellcolor{best}{\textbf{73.8 (0.5)}} \\
+Pendulum $(n = 48\times 40 \times 2)$
+  & 88.5 (0.6) & \cellcolor{second}{90.1 (0.5)} & 68.2 (1.9) & \cellcolor{best}{\textbf{91.5 (0.4)}} \\
+Cartpole $(n = 80\times 80 \times 2)$
+  & 39.5 (3.3) & \cellcolor{second}{94.1 (1.6)} & 98.5 (0.3) & \cellcolor{best}{\textbf{97.6 (1.2)}} \\
+3-link $(n = 80\times 80 \times 2)$
+  & 21.5 (0.9) & \cellcolor{best}{\textbf{48.5 (1.6)}} & 11.8 (0.8) & \cellcolor{second}{47.9 (1.4)} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% \begin{proof} \label{proof: claim_3.1}
+%     d
+% \end{proof}
+
+\subsubsection{Graph-Structured Dynamics}
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.99\linewidth]{graph_examples.pdf}
+    \caption{Comparison of ground truth and our predictions over time for rope and soft-body dynamics. Top row (Rope): red dots indicate ground truth positions, while blue dots show our predicted trajectories. Middle and bottom rows (Soft): translucent shapes represent ground truth deformations, and solid colored blocks denote our predictions. The time axis progresses from left to right.}
+    \label{fig:graph_examples}
+\end{figure}
+
+
+
+
+
+
+\clearpage
+\subsubsection{Model architecture}
+
+\begin{table}[h]
+\small
+\centering
+\caption{Model architecture for Kármán Vortex and Dam Flow task with input dimension $(C,H,W)$, where $C$ denotes the number of velocity components and $H \times W$ is the spatial resolution.}
+\renewcommand{\arraystretch}{1}
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+\textbf{Components} & \textbf{Layer} & \textbf{Layer number} & \textbf{$C, (H,W)$} & \textbf{Activation} \\
+\hline
+\multirow{6}{*}{Encoder} & Convolution Block & 1 & $C \rightarrow 8C, (\frac{H}{2},\frac{W}{2})$ & ReLU \\[0.3em]
+& Convolution Block & 3 & $8C \rightarrow 64C, (\frac{H}{16},\frac{W}{16})$ & ReLU \\[0.3em]
+& Convolution2d & 1 & $64C \rightarrow 128C, (\frac{H}{16},\frac{W}{16})$ & ReLU \\[0.3em]
+& Flatten & -- & $128C, (\frac{H}{16},\frac{W}{16}) \rightarrow \frac{CHW}{2}$ & -- \\[0.3em]
+& Fully Connected & 1 & $\frac{CHW}{2} \rightarrow d_s$ & -- \\[0.3em]
+\hline
+\multirow{1}{*}{Koopman Operator} & Linear & 1 & $d_s \rightarrow d_s$ & -- \\[0.3em]
+\hline
+\multirow{7}{*}{Decoder} & Fully Connected & 1 & $d_s \rightarrow \frac{CHW}{2}$ & ReLU \\[0.3em]
+& Transpose & -- & $\frac{CHW}{2} \rightarrow (128C, \frac{H}{16}, \frac{W}{16})$ & -- \\[0.3em]
+& ConvTranspose Block & 3 & $128C \rightarrow 8C, (H,W)$ & ReLU \\[0.3em]
+& ConvTranspose2d & 1 & $8C \rightarrow C, (H,W)$ & -- \\[0.3em]
+& Conv2d Refinement & 3 & $C \rightarrow C, (H,W)$ & ReLU \\[0.3em]
+\hline
+\end{tabular}
+\label{tab:cylinder_architecture}
+\end{table}
+
+\begin{table}[h]
+\small
+\centering
+\caption{Model architecture for ERA5 task with input dimension $(C,H,W)$, where $C$ denotes the number of channels and $H \times W$ is the spatial resolution, using a factorized-attention encoder.}
+\renewcommand{\arraystretch}{1}
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+\textbf{Components} & \textbf{Layer} & \textbf{Layer number} & \textbf{$C,(H,W)$} & \textbf{Activation} \\
+\hline
+\multirow{5}{*}{Encoder} 
+& Conv2d & 1 
+& $C \rightarrow \frac{64C}{5},\ (H,W)$ 
+& -- \\[0.3em]
+& Conv2d & 1 
+& $\frac{64C}{5} \rightarrow \frac{64C}{5},\ (\frac{H}{4},\frac{W}{4})$ 
+& -- \\[0.3em]
+& FactorizedBlock 
+& 1 
+& $\frac{64C}{5},\ (\frac{H}{4},\frac{W}{4})$ 
+& GELU \\[0.3em]
+& Flatten 
+& -- 
+& $\frac{64C}{5},\ (\frac{H}{4},\frac{W}{4}) \rightarrow \frac{4CHW}{5}$ 
+& -- \\[0.3em]
+& Fully Connected 
+& 1 
+& $\frac{4CHW}{5} \rightarrow d_s$ 
+& -- \\[0.3em]
+\hline
+\multirow{1}{*}{Koopman Operator} 
+& Linear 
+& 1 
+& $d_s \rightarrow d_s$ 
+& -- \\[0.3em]
+\hline
+\multirow{8}{*}{Decoder} 
+& Fully Connected 
+& 1 
+& $d_s \rightarrow \frac{4CHW}{5}$ 
+& ReLU \\[0.3em]
+& Transpose 
+& -- 
+& $\frac{4CHW}{5} \rightarrow (\frac{64C}{5}, \frac{H}{4},\frac{W}{4})$ 
+& -- \\[0.3em]
+& ConvTranspose2d
+& 2 
+& $\frac{64C}{5} \rightarrow \frac{64C}{5}, (H,W)$ 
+& ReLU \\[0.3em]
+& Conv2d
+& 1 
+& $\frac{64C}{5} \rightarrow C,\ (H,W)$ 
+& -- \\[0.3em]
+& Conv2d Refinement 
+& 3 
+& $C \rightarrow C,\ (H,W)$ 
+& ReLU \\[0.3em]
+\hline
+\end{tabular}
+\label{tab:era5_factorized_architecture}
+\end{table}
+
+
+For fair comparison, the architectures for visual input and graph-structured dynamics follow the settings in \cite{levine2019prediction} and \cite{li2019learning}.
+
+% \begin{table}[h]
+% \centering
+% \caption{Hyperparameter settings for the three tasks in physical simulation}
+% \label{tab:hyperparameters_1}
+% \begin{tabular}{lcc}
+% \toprule
+% \textbf{Parameter} & \textbf{Symbol} & \textbf{Value} \\
+% \midrule
+% % $\alpha$-temporal coherence & $\lambda$ & 0.10 \\
+% temporal coherence  & $\alpha$ & 2.00 \\
+% von Neumann entropy & $\gamma$ & 0.10 \\
+% InfoNCE neighborhood size & $k$ & 3 \\
+% % InfoNCE temperature parameter & $\tau$ & 0.07 \\
+% \bottomrule
+% \end{tabular}
+% \end{table}
+
+
+
+% \begin{table}[h]
+% \centering
+% \caption{Hyperparameter settings for the visual inputs}
+% \label{tab:hyperparameters_2}
+% \begin{tabular}{lcc}
+% \toprule
+% \textbf{Parameter} & \textbf{Symbol} & \textbf{Value} \\
+% \midrule
+% % $\alpha$-temporal coherence & $\lambda$ & 0.10 \\
+% temporal coherence  & $\alpha$ & 3.00 \\
+% structural consistency & $\beta$ & 2.00 \\
+% von Neumann entropy & $\gamma$ & 0.5 \\
+% InfoNCE neighborhood size & $k$ & 5 \\
+% % InfoNCE temperature parameter & $\tau$ & 0.07 \\
+% \bottomrule
+% \end{tabular}
+% \end{table}
+
+% \begin{table}[H]
+
+% \centering
+% \caption{Hyperparameter settings for graph-structured dynamics}
+% \label{tab:hyperparameters_3}
+% \begin{tabular}{lcc}
+% \toprule
+% \textbf{Parameter} & \textbf{Symbol} & \textbf{Value} \\
+% \midrule
+% % $\alpha$-temporal coherence & $\lambda$ & 0.10 \\
+% temporal coherence  & $\alpha$ & 2.00 \\
+% von Neumann entropy & $\gamma$ & 0.10 \\
+% InfoNCE neighborhood size & $k$ & 5 \\
+% % InfoNCE temperature parameter & $\tau$ & 0.07 \\
+% \bottomrule
+% \end{tabular}
+% \end{table}
+
+\begin{table}[h]
+\centering
+\caption{Hyperparameter settings across physical simulations, visual inputs, and graph-structured dynamics}
+\label{tab:hyperparameters_all}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Parameter} & \textbf{Symbol} & \textbf{Physical Sim.} & \textbf{Visual Inputs} & \textbf{Graph Dyn.} \\
+\midrule
+Temporal coherence      & $\alpha$ & 2.00 & 3.00 & 2.00 \\
+Structural consistency  & $\beta$  & --   & 2.00 & --   \\
+von Neumann entropy     & $\gamma$ & 0.10 & 0.50 & 0.10 \\
+InfoNCE neighborhood    & $k$      & 3    & 5    & 5    \\
+% InfoNCE temperature parameter & $\tau$ & 0.07 & 0.07 & 0.07 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+
+\clearpage
+\subsection{Baseline Algorithms}
+\paragraph{Physical Simulation Tasks.}
+\begin{itemize}
+    \item \textbf{VAE} \citep{kingma2013auto}: Baseline implemented using a standard variational autoencoder with a nonlinear forward map in latent space. Code available at \url{https://github.com/bvezilic/Variational-autoencoder}.
+    \item \textbf{KAE} \citep{pan2023pykoopman}: Koopman learning with an autoencoder architecture. Code available at \url{https://github.com/dynamicslab/pykoopman}.
+    \item \textbf{KKR} \citep{bevanda2023koopman}: For the low-dimensional Lorenz–63 system, we adopt fixed kernel functions as basis following the implementation in \url{https://github.com/TUM-ITR/koopcore}. For high-dimensional systems, we use deep kernel features following \citet{yangtensor}, with code available at \url{https://github.com/yyimingucl/TensorVar/blob/main/model/KS_model.py}.
+    \item \textbf{PFNN} \citep{cheng2025learning}: A state-of-the-art Koopman variant for learning and predicting chaotic dynamics. Code available at \url{https://github.com/Hy23333/PFNN}.
+\end{itemize}
+
+\paragraph{Visual Inputs.}
+\begin{itemize}
+    \item \textbf{E2C} \citep{banijamali2018robust}: A latent embedding approach based on the VAE framework. Code available at \url{https://github.com/ericjang/e2c}.
+    \item \textbf{KAE} \citep{pan2023pykoopman}: Koopman learning with an autoencoder architecture. Code available at \url{https://github.com/dynamicslab/pykoopman}.
+    \item \textbf{PCC} \citep{banijamali2018robust}: A state-of-the-art latent embedding algorithm also based on the VAE framework. Code available at \url{https://github.com/VinAIResearch/PCC-pytorch/tree/master/sample_results}.
+\end{itemize}
+
+\paragraph{Graph-Structured Dynamics.}
+\begin{itemize}
+    \item \textbf{CKO} \citep{li2019learning}: A Koopman-based framework for learning and predicting general graph-structured dynamics. Code available at \url{https://github.com/YunzhuLi/CompositionalKoopmanOperators}.
+\end{itemize}
+
+
+\end{document}

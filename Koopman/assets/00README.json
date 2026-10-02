@@ -1,0 +1,41 @@
+{
+   "sources" : [
+      {
+         "usage" : "toplevel",
+         "filename" : "iclr2025_conference.tex"
+      },
+      {
+         "usage" : "ignore",
+         "filename" : "examples_of_physical_simulation.pdf"
+      },
+      {
+         "usage" : "ignore",
+         "filename" : "latent_eigen_tsne.pdf"
+      },
+      {
+         "usage" : "ignore",
+         "filename" : "overview.pdf"
+      },
+      {
+         "usage" : "ignore",
+         "filename" : "physical_examples.pdf"
+      },
+      {
+         "usage" : "ignore",
+         "filename" : "planar_manifold.pdf"
+      },
+      {
+         "usage" : "ignore",
+         "filename" : "predicition_noise_noiseless_condition.pdf"
+      },
+      {
+         "usage" : "ignore",
+         "filename" : "prediction_xyz_spatial_corr.png"
+      }
+   ],
+   "spec_version" : 1,
+   "texlive_version" : "2025",
+   "process" : {
+      "compiler" : "pdflatex"
+   }
+}
