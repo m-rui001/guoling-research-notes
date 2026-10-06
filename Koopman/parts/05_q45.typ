@@ -27,25 +27,46 @@ $ max_(cal(C)) 1/2 log det( I + M_n^(-1\/2) (cal(K)^n) cal(C) (cal(K)^n)^T M_n^(
 === 化为注水问题
 
 #proof[
-  对 $M_n^(-1\/2) cal(K)^n$ 做奇异值分解（把任意矩阵写成“旋转、按对角元缩放、再旋转”
-  三步的乘积，得到的对角元叫奇异值，它们总取非负值）：
+  *第一步：对角化增益。* 对 $M_n^(-1\/2) cal(K)^n$ 做奇异值分解（把任意矩阵写成“旋转、
+  按对角元缩放、再旋转”三步的乘积，得到的对角元叫奇异值，它们总取非负值）。
+  论文把奇异值写成 $sqrt(g_i)$：
 
-  $ M_n^(-1\/2) cal(K)^n = U op("diag")(g_i) V^T, quad g_i >= 0 . $
+  $ M_n^(-1\/2) cal(K)^n = U op("diag")(sqrt(g_i)) V^T, quad g_i >= 0 , $
 
-  代进去，用 $det(I + A B) = det(I + B A)$ 把 $U$ 移走（$U, V$ 正交）：
+  即 $g_i$ 是奇异值的平方（附录记号表称之为谱增益）。代入目标函数，并记
+  $G := op("diag")(sqrt(g_i))$、$B := V^T cal(C) V$：
 
-  $ I(z_(t-n); z_t) = 1/2 log det( I + U op("diag")(g_i) V^T cal(C) V op("diag")(g_i) U^T ) = 1/2 log det( I + op("diag")(g_i) B op("diag")(g_i) ), quad B := V^T cal(C) V . $
+  $ I(z_(t-n); z_t) = 1/2 log det( I + U G B G U^T ) . $
 
-  再用一次循环性，$op("diag")(g) B op("diag")(g) = B op("diag")(g_i^2)$，于是
+  *第二步：把 $U$ 移出行列式。* 用恒等式 $det(I + A B) = det(I + B A)$。适用条件很宽：
+  对任意可乘的方阵对成立（$A$ 可逆时一行证出：
+  $det(I + A B) = det(A^(-1)(I + A B) A) = det(I + B A)$，相似矩阵行列式相同；
+  $A$ 不可逆时两边都是 $A$ 的连续函数，取极限即得）。这里取 $A = U$（正交，必可逆）、
+  $B = G B G U^T$，中间的 $U^(-1) U = U^T U = I$ 恰好消掉：
 
-  $ I = 1/2 log det( I + B op("diag")(g_i^2) ) . $
+  $ det(I + U G B G U^T) = det(I + G B G) . $
 
-  对半正定 $B$ 与对角 $D >= 0$，由 Fischer/Minkowski 行列式不等式，
+  *第三步：把左边的 $G$ 换到右边。* 把 $G B G$ 看成 $(G B) dot G$，再用一次同一个恒等式
+  （$A = G B$，$B = G$）：$det(I + (G B) G) = det(I + G (G B)) = det(I + G^2 B)$；
+  再用第三次（$A = G^2$，$B = B$）：$det(I + G^2 B) = det(I + B G^2)$。
+  注意 $G B G$ 与 $B G^2$ 作为矩阵一般不相等（除非 $B$ 恰好是对角的），
+  相等的只是行列式。于是
 
-  $ det(I + B D) <= product_i (1 + B_(i i) D_(i i)), $
+  $ I(z_(t-n); z_t) = 1/2 log det( I + B op("diag")(g_i) ) . $
 
-  等号当且仅当 $B$ 在该基下对角。因此在给定 $op("tr")(B) = op("tr")(cal(C)) <= C_0$ 时，
-  *最优的 $cal(C)$ 在 $V$ 基下是对角的*。记其对角元为 $p_i$，这些 $p_i$ 就是
+  *第四步：为什么最优解可以在对角的 $B$ 里找。* 对半正定 $B$ 与半正定对角
+  $D = op("diag")(g_i)$，由 Fischer 行列式不等式，
+
+  $ det(I + B D) <= product_i (1 + B_(i i) D_(i i)) , $
+
+  等号当且仅当 $B$ 在这组基下是对角的。适用条件核对：这里的 $B = V^T cal(C) V$，
+  $cal(C)$ 是协方差故半正定，$V$ 正交变换保持半正定性；$D$ 对角非负。另外，
+  $B <-> cal(C) = V B V^T$ 是一一对应，且保持半正定与迹
+  （迹的循环性：$op(“tr”)(V^T cal(C) V) = op(“tr”)(cal(C) V V^T) = op(“tr”)(cal(C))$，
+  用 $op(“tr”)(A B C) = op(“tr”)(C A B)$，取 $A = V^T, B = cal(C), C = V$）。
+  所以在 $op(“tr”)(B) = op(“tr”)(cal(C)) <= C_0$ 约束下：上界只依赖 $B$ 的对角元；
+  把任何可行 $B$ 的非对角元置零，得到的对角矩阵仍然半正定、迹不变、且恰好取到等号。
+  于是*最优的 $cal(C)$ 在 $V$ 基下是对角的*。记其对角元为 $p_i$，这些 $p_i$ 就是
   谱权（spectral weights），它们指示方差如何分配到各个观测方向 ${psi_1, ..., psi_d}$。
 
   于是优化问题化为标准注水问题：
@@ -63,22 +84,38 @@ $cal(K)$ 特征值靠近单位圆*。这就把信息分配和谱联系起来了�
 
 $ cal(L) = 1/2 sum_(i=1)^d log(1 + g_i p_i) - mu( sum_(i=1)^d p_i - C_0 ) + sum_(i=1)^d lambda_i p_i . $
 
+先说明为什么 KKT 条件足以刻画解：目标 $1\/2 sum log(1+g_i p_i)$ 在 $p_i >= 0$ 上是凹函数
+（$log$ 凹，复合线性映射仍凹），约束全是线性的，可行集是凸集。凹目标在凸集上的最大化
+问题里，KKT 条件既必要又充分，解出来的驻点就是全局最优。
+
 #proof[
-  对 $p_i$ 求偏导并令其为零：
+  *驻点方程。* 对 $p_i$ 求偏导（$mu$、$lambda_i$ 与其它 $p_j$ 都视为常数）：
+  第一项用链式法则 $d\/d p log(1+g p) = g\/(1+g p)$ 再除以 2；约束项各贡献 $-mu$ 与
+  $+lambda_i$。令其为零：
 
   $ (partial cal(L))/(partial p_i) = (g_i)/(2(1 + g_i p_i)) - mu + lambda_i = 0 . $
 
-  分两种情形：
+  *互补松弛。* KKT 的互补松弛条件是 $lambda_i p_i = 0$：每个 $p_i >= 0$ 约束要么贴边
+  （$p_i = 0$），要么不起作用（$lambda_i = 0$），二者必居其一。据此分两种情形。
 
-  *内部解（$p_i > 0$）*：互补松弛要求 $lambda_i = 0$，于是
+  *内部解（$p_i > 0$）*：互补松弛给出 $lambda_i = 0$，于是
 
   $ (g_i)/(2(1 + g_i p_i)) = mu quad ==> quad 1 + g_i p_i = (g_i)/(2 mu) quad ==> quad p_i = 1/(2 mu) - 1/g_i . $
 
-  *边界解（$p_i = 0$）*：此时 $lambda_i >= 0$，即 $(g_i)/2 <= mu$，这一方向拿不到任何方差。
+  （第一个箭头是两边乘 $2(1+g_i p_i)\/g_i$；第二个箭头移项。每步都是可逆的代数变形，
+  $g_i > 0$、$mu > 0$ 保证除法合法。）
 
-  合并两种情形：
+  *边界解（$p_i = 0$）*：代回驻点方程，$g_i\/2 - mu + lambda_i = 0$，即
+  $lambda_i = mu - g_i\/2$。乘子的非负性要求 $lambda_i >= 0$，即 $g_i\/2 <= mu$，
+  等价于 $1\/(2 mu) - 1\/g_i <= 0$：这一方向的“水位”不高于“门槛”，拿不到任何方差。
 
-  $ p_i = max(0, 1/(2 mu) - 1/g_i), quad "其中" mu "由" sum_i p_i = C_0 "确定。" quad square $
+  *合并。* 两种情形可以写成一条式子：内部解给出 $1\/(2mu) - 1\/g_i > 0$ 时的值，
+  边界解对应它 $<= 0$ 的情形，正好是取 $max$ 与 0：
+
+  $ p_i = max(0, 1/(2 mu) - 1/g_i), quad "其中" mu "由" sum_i p_i = C_0 "确定。" $
+
+  （$mu$ 的确定：目标对每个 $p_i$ 严格递增，总预算约束必然取等号
+  $sum_i p_i = C_0$，这个方程解出 $mu$。$square$）
 ]
 
 #insight("这个解的含义")[
@@ -114,7 +151,7 @@ $ cal(L) = 1/2 sum_(i=1)^d log(1 + g_i p_i) - mu( sum_(i=1)^d p_i - C_0 ) + sum_
   注水解*退化成一个低秩解*：只有少数几个 $i$ 满足 $g_i > 2 mu$。
   信息被挤进这几个主导方向，潜在空间的有效维度崩塌。
 
-  这就是模式坍缩的*数学机制*。它不是 bug，它是“最大化互信息”这个目标的*最优解*。
+  这就是模式坍缩的*数学机制*。它恰恰是“最大化互信息”这个目标的*最优解*。
 ]
 
 #warn("论文的立场需要分清")[
@@ -158,15 +195,22 @@ $ S(cal(C)/op("tr")(cal(C))) = - sum_(i=1)^d p_i/op("tr")(cal(C)) log p_i/op("tr
 
   $ cal(L) = 1/2 sum_(i=1)^d log(1 + g_i p_i) + gamma ( - sum_(i=1)^d p_i/op("tr")(cal(C)) log p_i/op("tr")(cal(C)) ) - mu( sum_i p_i - C_0 ) + sum_i lambda_i p_i . $
 
-  对 $p_i$ 求导，注意 $partial\/partial p_i [ -(p_i\/T) log(p_i\/T) ] = -(1\/T)(log(p_i\/T) + 1)$（记 $T := op("tr")(cal(C))$）：
+  *对 $p_i$ 求导，逐项算。* 第一项与 KKT 一节相同，是 $g_i\/(2(1+g_i p_i))$。
+  熵项：记 $u = p_i \/ T$（$T := op("tr")(cal(C))$），先对 $u$ 求
+  $d\/d u [-u log u] = -(log u + 1)$（乘积法则：$-(u' log u + u dot 1\/u)$），
+  再由 $u$ 对 $p_i$ 的导数是 $1\/T$ 用链式法则，得到 $-(1\/T)(log(p_i\/T) + 1)$。
+  线性约束项各贡献 $-mu$ 与 $+lambda_i$。
+  （求导时把 $T = op("tr")(cal(C))$ 当作固定参数处理，这是论文的约定：
+  相当于每一步先把归一化总量冻结在当前值，再解逐方向的驻点方程。）
 
   $ (g_i)/(2(1 + g_i p_i)) - mu + lambda_i - gamma/T ( log(p_i/T) + 1 ) = 0 . $
 
-  在内部解 $lambda_i = 0$（论文指出这是 KKT 条件下的情形），移项：
+  *解出 $(star)$。* 内部解 $p_i > 0$ 时互补松弛给出 $lambda_i = 0$（论文指出这是 KKT
+  条件下的情形）。移项把熵项单独放到一边，两边乘 $T\/gamma$：
 
   $ log(p_i/T) + 1 = T/gamma ( (g_i)/(2(1 + g_i p_i)) - mu ) . $
 
-  两边取指数：
+  两边取指数（$exp$ 是严格增函数，取指数不改变方程的解）：
 
   $ p_i/T = exp( T/gamma ( (g_i)/(2(1 + g_i p_i)) - mu ) - 1 ) . quad (star) $
 ]
@@ -183,16 +227,37 @@ $ S(cal(C)/op("tr")(cal(C))) = - sum_(i=1)^d p_i/op("tr")(cal(C)) log p_i/op("tr
 ]
 
 #proof[
-  把 $(star)$ 整理成 $p_i exp( -(T/gamma) (g_i)/(2(1 + g_i p_i)) ) = C_1$ 的形式，
-  其中 $C_1 := T exp( -1 - (T mu)\/gamma ) > 0$ 是正常数。引入 $y := 1 + g_i p_i$，于是 $p_i = (y-1)\/g_i$：
+  *第一步：把常数从指数里分出来。* 把 $(star)$ 两边乘 $T$，并按
+  $exp(A + B) = exp(A) exp(B)$ 把指数拆成“常数 + 含 $p_i$ 的部分”：
+
+  $ p_i = T exp( -1 - (T mu)/gamma ) dot exp( (T g_i)/(2 gamma (1 + g_i p_i)) ) . $
+
+  常数因子记作 $C_1 := T exp( -1 - (T mu)/gamma ) > 0$；两边同除以含 $p_i$ 的那个指数
+  （等价于乘它的倒数，指数变号），得到
+
+  $ p_i exp( -(T g_i)/(2 gamma (1 + g_i p_i)) ) = C_1 . $
+
+  *第二步：换元 $y := 1 + g_i p_i$。* 于是 $p_i = (y-1)\/g_i$，指数的分母
+  $1 + g_i p_i = y$。代入并两边乘 $g_i$：
 
   $ (y - 1) exp( -(T g_i)/(2 gamma y) ) = g_i C_1 . quad (star star) $
 
-  这个方程的形状正是 $x e^x + r x = "常数"$ 这一类。用广义 Lambert W 函数求解，得到
+  *第三步：凑成广义 Lambert W 的定义式。* 记 $a := T g_i/(2 gamma)$，并设
+  $W := a\/y$（即 $y = a\/W$；$W$ 就是指数位置的量取了正号）。代入 $(star star)$：
+
+  $ (a/W - 1) e^(-W) = g_i C_1 . $
+
+  两边乘 $W$（$W != 0$，因为 $a > 0$、$y > 0$），再乘恒正的 $e^W$：
+
+  $ a - W = g_i C_1 W e^W quad ==> quad W e^W + 1/(g_i C_1) W = a/(g_i C_1) . $
+
+  第二个式子正是定义 14 的形状 $W_r(z) e^(W_r(z)) + r W_r(z) = z$，其中
+  $r = 1\/(g_i C_1)$、$z = a\/(g_i C_1) = (T g_i)\/(2 gamma g_i C_1)$。于是
+  $W = W_(1\/(g_i C_1))((T g_i)/(2 gamma g_i C_1))$，代回 $y = a\/W$：
 
   $ y = (T g_i \/ (2 gamma))/( W_(1\/(g_i C_1))( (T g_i)/(2 gamma g_i C_1) ) ) , $
 
-  从而
+  *第四步：回到 $p_i$。* $p_i = (y-1)\/g_i = a\/(g_i W) - 1\/g_i$，其中 $a\/g_i = T\/(2 gamma)$：
 
   $ p_i = (T)/(2 gamma) dot 1/( W_(1\/(g_i C_1))( (T g_i)/(2 gamma g_i C_1) ) ) - 1/g_i . quad square $
 ]
@@ -204,12 +269,14 @@ $ S(cal(C)/op("tr")(cal(C))) = - sum_(i=1)^d p_i/op("tr")(cal(C)) log p_i/op("tr
 ]
 
 #keypoint("为什么这个解保证了抗坍缩")[
-  关键不是那个复杂的 Lambert W 表达式，而是它蕴含的一个结构性事实：
+  这个解保证抗坍缩的原因，藏在它蕴含的一个结构性事实里：
 
   *在熵正则下，所有方向的谱权 $p_i$ 都严格为正。*
 
-  （证明的依据是式 $(star star)$ 的左边：$y - 1 = g_i p_i$，而 $y$ 由正的 Lambert W 给出，
-  故 $y > 1$，故 $p_i > 0$。对比无熵正则时的 $p_i = max(0, c - 1\/g_i)$，
+  （依据在式 $(star star)$ 本身：它要求
+  $y - 1 = g_i C_1 exp( -(T g_i)\/(2 gamma y) )$，右端是正常数 $g_i C_1$ 乘以恒正的
+  指数函数，严格大于零；而 $y - 1 = g_i p_i$ 且 $g_i > 0$，所以 $p_i > 0$。
+  对比无熵正则时的 $p_i = max(0, c - 1\/g_i)$，
   那里低于水位的方向直接被置零。）
 
   于是谱权重在所有模式上都有正分配，避免了退化的谱，潜在空间 $Z$ 的有效维度被可证明地提升。

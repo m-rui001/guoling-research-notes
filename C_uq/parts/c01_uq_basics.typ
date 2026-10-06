@@ -48,12 +48,16 @@ $ cal(F)_(lambda, xi)[u(x; xi)] = f(x; xi), quad x in Omega, quad xi in Xi, quad
 == 贝叶斯模型平均：参数不确定性怎么变成预测不确定性
 
 设网络权重为 $theta$，数据为 $cal(D)$。贝叶斯框架下权重有后验分布
-$p(theta | cal(D)) prop p(cal(D) | theta) p(theta)$。预测的分布由
-#term("BMA", "贝叶斯模型平均") 给出：
+$p(theta | cal(D)) prop p(cal(D) | theta) p(theta)$：
+先验 $p(theta)$ 是看数据之前对权重的假设，似然 $p(cal(D) | theta)$
+是给定权重时数据出现的机会，后验是两者按贝叶斯定理合成、
+看数据之后的更新（硬币版完整数值例见第 0 章 §0.3）。
+预测的分布由 #term("BMA", "贝叶斯模型平均") 给出：
 
 $ p(u | x, cal(D)) = integral p(u | x, theta) p(theta | cal(D)) d theta , quad p(cal(D)) = integral p(cal(D) | theta) p(theta) d theta . $
 
-这个积分算不出来（$theta$ 维数是百万级），实践用 MC 近似：
+这个积分算不出来（$theta$ 维数是百万级），实践用
+#term("MC", "Monte Carlo，蒙特卡洛：从分布抽样本、用样本平均代替积分，第 0 章 §0.6") 近似：
 从后验抽 $M$ 个样本 $hat(theta)_1, ..., hat(theta)_M$，预测分布近似为混合
 
 $ p(u | x, cal(D)) approx overline(p)(u | x) = 1/M sum_(j=1)^M p(u | x, hat(theta)_j) . $
@@ -64,9 +68,10 @@ $ hat(u)(x) approx overline(mu)(x) = 1/M sum_(j=1)^M u_(hat(theta)_j)(x) , $
 
 $ op("Var")(u | x, cal(D)) approx overline(sigma)^2(x) = underbrace(Sigma_u^2, overline(sigma)_a^2(x)) + underbrace(1/M sum_(j=1)^M (u_(hat(theta)_j)(x) - overline(mu)(x))^2, overline(sigma)_e^2(x)) . $
 
-逐项读：总方差 = aleatoric 项（噪声水平 $Sigma_u^2$，各成员共享）
-+ epistemic 项（各成员预测在均值附近的散度）。*两类不确定性从此有了
-可计算的化身*：网络组内分歧就是 epistemic 的度量。异方差版本把
+逐项读：总方差 = aleatoric 项（噪声水平 $Sigma_u^2$，各成员共享）加
+epistemic 项（各成员预测在均值附近的散度）。*两类不确定性从此有了
+可计算的化身*：网络组内分歧就是 epistemic 的度量。异方差
+（heteroscedastic：噪声水平随输入 $x$ 变化）版本把
 $Sigma_(u, theta)^2(x)$ 也作为网络的额外输出（每点一个噪声水平），
 $overline(sigma)_a^2$ 改为对各成员噪声输出的平均。
 
@@ -78,7 +83,8 @@ $overline(sigma)_a^2$ 改为对各成员噪声输出的平均。
 )
 
 各种 UQ 方法的差别，只在于“怎么得到后验样本”这一步：
-HMC 与朗之万做 MCMC；变分推断（MFVI、MC dropout）用可优化分布近似；
+HMC 与朗之万做 #term("MCMC", "马尔可夫链蒙特卡洛：构造平稳分布等于后验的随机链，链上位置当样本，第 0 章 §0.6")；
+变分推断（MFVI、MC dropout）用可优化分布近似；
 深度集成直接训练多个网络取它们的极小值点；拉普拉斯近似在训练终点
 局部展开。综述把这些统一进一个“模型 + 物理 + 后验推断”的框架
 （第 2 章的图），下一节展开。
@@ -102,7 +108,8 @@ HMC 与朗之万做 MCMC；变分推断（MFVI、MC dropout）用可优化分布
   align(center, image("../fig_c/c1_misscal.png", width: 86%)),
   caption: [过置信与欠置信（综述 2201.07766）。左：过置信模型的预测区间
   比数据生成分布窄，校准曲线在低位就达到 1；右：欠置信相反。
-  中间的对角线是理想校准。深度网络的常态是过置信，尤其在 OOD 区域。],
+  中间的对角线是理想校准。深度网络的常态是过置信，尤其在
+  OOD（out-of-distribution，分布外：输入落在训练数据没有覆盖的区域）区域。],
 )
 
 事后校准有三条标准路线，都只需要一小块留出数据：

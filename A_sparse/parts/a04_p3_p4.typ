@@ -40,7 +40,17 @@ $ E^c[ 2^d/rho_c (bold(z)) psi_i (bold(z)) psi_j (bold(z)) + sum_(k=1)^d (1 - z_
 
 读法：函数值行与导数行在 Chebyshev 测度 $rho_c$ 下的加权内积*依然对角*，
 而且对角元显式等于 $1 + sum_k c_k i_k (i_k + 1)$（$c_k$ 是第 $k$ 个导数行的权重系数，
-$i_k$ 是该指标的次数）。于是取
+$i_k$ 是该指标的次数）。恒等式的机制在一维看得最清楚，两个来源：
+
+- *函数值行*：$rho_c^(-1)$ 因子把采样密度换回基族自己的自然权重，
+  函数值项按 Legendre 正交性给出 $delta_(i j)$；
+- *导数行*：Legendre 多项式满足 Legendre 方程
+  $((1 - x^2) phi_i ')' + i (i + 1) phi_i = 0$。两边乘 $phi_j$ 积分、
+  分部积分一次，边界项因因子 $(1 - x^2)$ 在 $x = plus.minus 1$ 为零而消失，
+  剩下 $integral (1 - x^2) phi_i ' phi_j ' d x = i (i + 1) integral phi_i phi_j d x = i (i + 1) delta_(i j)$。
+
+交叉项为零、$d$ 维按维乘开，就得到显示式里的
+$1 + sum_k c_k i_k (i_k + 1)$。于是取
 
 $ (W^0)_(n, n) = ((4\/pi^2)(1 - (z^((n))_j)^2))^(d\/4) , quad (W^j)_(n, n) = (W^0)_(n, n) (1 - (z_j^((n)))^2)^(1\/2) \/ sqrt(2) , $
 
@@ -103,8 +113,12 @@ Guo–Li–Liu（2018）采用 Zhang–Xin 提出的 #term("TL1", [transformed $
 
 $ rho_a (abs(t)) = ((a + 1) abs(t))/(a + abs(t)) , quad P_a (x) = sum_i rho_a (abs(x_i)) . $
 
-参数 $a$ 是一个插值旋钮：$a -> 0^+$ 时 $rho_a$ 趋近逐点计数（$ell_0$，
-强稀疏促进）；$a -> infinity$ 时 $rho_a -> ell_1$（凸）。
+参数 $a$ 是一个插值旋钮，两个极限都可以动手算。对固定的 $t > 0$，
+$a -> 0^+$ 时分子 $-> t$、分母 $-> t$，于是 $rho_a (t) -> 1$；而
+$t = 0$ 处 $rho_a (0) = 0$。每个非零分量罚 $1$、零分量罚 $0$，
+这就是逐点计数（$ell_0$，强稀疏促进）。$a -> infinity$ 时
+$rho_a (t) = ((a+1) t)\/(a + t) = ((1 + 1\/a) t)\/(1 + t\/a) -> t$，
+回到 $ell_1$（凸）。
 $rho_a$ 单调递增且凹，导数在零点连续有界（这是 DCA 可行的条件）。
 优化问题：$min P_a (x)$ s.t. $bold(A) bold(x) = bold(b)$，或带噪版本
 $min P_a (x)$ s.t. $norm(B x - b)_2 <= epsilon$。

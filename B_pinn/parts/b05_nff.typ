@@ -22,17 +22,47 @@ NFF（#term("Normalizing Field Flows", "正则化场流")）用的工具是 norm
 == 基础：变量替换公式
 
 #definition("什么叫“normalizing flow”")[
-  一串可逆变换 $k = cal(F)_"KZ" (z)$，把简单参考分布 $p_Z (z)$（通常是标准高斯）
-  映成目标分布 $p_K (k)$。密度的变换规则是多元微积分的变量替换公式：
+  一串可逆变换 $k = cal(F)_"ZK" (z)$，把简单参考分布 $p_Z (z)$（通常是标准高斯）
+  映成目标分布 $p_K (k)$；它的逆记作 $cal(F)_"KZ" = cal(F)_"ZK"^(-1)$，把 $k$
+  拉回参考空间（“normalize” 就是这么来的：目标分布被拉平成高斯）。
+  密度的变换规则是多元微积分的变量替换公式：
 
-  $ p_K (k) = |det (partial cal(F)_"KZ" (k))/(partial k)| p_Z (z), quad z = cal(F)_"KZ"^(-1)(k) . $
+  $ p_K (k) = |det (partial cal(F)_"KZ" (k))/(partial k)| p_Z (z), quad z = cal(F)_"KZ"(k) . $
 
-  逆变换把 $k$ 拉回参考空间（“normalize” 就是这么来的：目标分布被拉平成高斯）。
-  对数似然因此可算：
+  这条公式由一维情形的完整推导起步，四步走完。
+
+  *第一步（一维，从分布函数入手）*：设一维严格单调可逆变换
+  $k = f(z)$。目标变量的分布函数用参考变量的分布函数表示：
+  $P(K <= k) = P(f(Z) <= k) = P(Z <= f^(-1)(k))$（$f$ 递增时；
+  递减时把 $<=$ 换成 $>=$，结论相同）。两边对 $k$ 求导，
+  分布函数的导数是密度：
+
+  $ p_K (k) = p_Z (f^(-1)(k)) dot (f^(-1))'(k) = p_Z (z) dot (f^(-1))'(k) . $
+
+  *第二步（识别拉伸因子）*：反函数求导法则给
+  $(f^(-1))'(k) = 1 \/ f'(z)$，所以 $p_K (k) = p_Z (z) \/ |f'(z)|$。
+  翻译：$|f'(z)|$ 量的是变换在 $z$ 处把小区间拉伸多少倍；
+  区间被拉长多少倍，密度就被压低多少倍，
+  两者的乘积（概率）不随变换改变。
+
+  *第三步（多维）*：区间拉伸的推广是小体积缩放，
+  度量它的量是雅可比行列式。$cal(F)_"KZ"$ 把 $k$ 空间映回 $z$ 空间，
+  它的雅可比行列式 $|det (partial cal(F)_"KZ" (k))\/(partial k)|$ 就是
+  $z$ 空间小体积与 $k$ 空间小体积之比，代入第二步的公式
+  （除以拉伸因子换成乘上体积比）即得上面第一条 display；
+  一维时行列式退化为绝对值导数，与第二步一致。
+
+  *第四步（取对数与复合）*：两边取对数，乘除变加减，
+  对 $N$ 个数据点求和：
 
   $ log p_K (cal(D) | theta, phi) = sum_(i=1)^N log p_Z (z_i) - log |det (partial cal(F)_"ZK" (z_i))/(partial z)| . $
 
-  $n$ 层复合 $cal(F)_"ZK" = cal(F)_n compose dots compose cal(F)_1$ 时，对数密度逐层累加：
+  第二项里的雅可比是正向映射的（对 $z$ 求导），与第一步的
+  逆映射雅可比互为倒数（反函数求导法则的矩阵版本），
+  所以负号恰好配平。$n$ 层复合 $cal(F)_"ZK" = cal(F)_n compose dots compose cal(F)_1$ 时，
+  链式法则给 $partial cal(F)\/partial z = partial cal(F)_n dots partial cal(F)_1$（矩阵乘积），
+  行列式的乘法性质 $det(bold(A) bold(B)) = det(bold(A)) det(bold(B))$ 把连乘变成
+  各层行列式的连乘，取对数后逐层累加：
 
   $ log p_K (k) = log p_(Z^0)(z^0) - sum_(j=1)^n log |det (partial cal(F)_j (z^(j-1)))/(partial z^(j-1))| . $
 
@@ -45,12 +75,21 @@ NFF（#term("Normalizing Field Flows", "正则化场流")）用的工具是 norm
 
 $ overline(k) = overline(z), quad tilde(k) = tilde(z) dot exp(s(overline(z))) + t(overline(z)) , $
 
-其中 $s, t$ 是任意神经网络（不需要可逆）。雅可比矩阵是下三角的：
+其中 $s, t$ 是任意神经网络（不需要可逆）。为什么雅可比是下三角的，
+把矩阵逐行写出来就明白：上半块的输出 $overline(k) = overline(z)$
+不经过任何网络、不依赖 $tilde(z)$，所以上半块对 $tilde(z)$ 的导数全是零；
+下半块 $tilde(k) = tilde(z) dot exp(s(overline(z))) + t(overline(z))$ 对
+$tilde(z)$ 的导数是 $exp(s(overline(z)))$ 的逐分量缩放（对角阵）。
+于是雅可比矩阵是下三角的：
 
 $ cal(J) = mat(I_m & 0; (partial tilde(k))/(partial overline(z)) & "diag"(exp(s(overline(z))))) , $
 
-行列式只在对角线上：$det cal(J) = exp(sum s(overline(z)))$，一个求和就够。
-逆变换直接解出：$tilde(z) = (tilde(k) - t(overline(k))) dot exp(-s(overline(k)))$。
+三角阵的行列式等于对角元的乘积（线性代数标准结论），
+对角元上半块全是 1、下半块是 $exp(s_j)$，所以
+$det cal(J) = exp(sum s(overline(z)))$，一个求和就够。
+逆变换直接解出：对 $tilde(z)$ 解一元一次方程
+$tilde(k) = tilde(z) dot exp(s(overline(k))) + t(overline(k))$，得
+$tilde(z) = (tilde(k) - t(overline(k))) dot exp(-s(overline(k)))$。
 奇数层变换前半、偶数层变换后半，交替进行，保证每个维度都被变换过。
 
 #figure(

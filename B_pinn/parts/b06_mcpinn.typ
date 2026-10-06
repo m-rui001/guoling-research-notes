@@ -89,13 +89,30 @@ $tau, xi, r$），损失用它们的乘积：
 $ hat(L)_"equ" (theta) = 1/(m N_u) sum_(i, j) hat(L)[u_(n n)(x_i, t_i; theta)] dot hat(L)'[u_(n n)(x_i, t_i; theta)] . $
 
 #proposition("无偏性")[
-  设 $hat(L)$ 与 $hat(L)'$ 独立同分布，且都是 $L[u_(n n]]$ 的无偏估计
+  设 $hat(L)$ 与 $hat(L)'$ 独立同分布，且都是 $L[u_(n n)] - f$ 的无偏估计
   （$epsilon = epsilon_t = 0$、舍入误差可忽略时成立），则
 
-  $ E[hat(L)_"equ" (theta)] = E[hat(L)] E[hat(L)'] = (L[u_(n n]] - f)^2 = L_"equ" (theta) . $
+  $ E[hat(L)_"equ" (theta)] = E[hat(L)] E[hat(L)'] = (L[u_(n n)] - f)^2 = L_"equ" (theta) . $
 ]
 
-证明只有一行期望的乘法性质，构造本身才是重点：
+#proof[
+  两步。*第一步（独立性拆开期望）*：把两次估计写成
+  $hat(L) = mu + delta$、$hat(L)' = mu + delta'$，其中
+  $mu = L[u_(n n)] - f$ 是公共期望，$delta, delta'$ 是零均值的波动。
+  乘积展开后逐项取期望：
+
+  $ E[hat(L) hat(L)'] = mu^2 + mu E[delta] + mu E[delta'] + E[delta delta'] = mu^2 , $
+
+  前两项由波动零均值消失；最后一项 $E[delta delta'] = E[delta] E[delta'] = 0$
+  用独立性（独立随机变量期望的乘法性质，概率论标准结论）。
+  方差项就在这里被排除：如果损失直接用 $hat(L)^2$，
+  对应的展开会多出 $E[delta^2] = op("Var")(hat(L))$，梯度被系统性抬高。
+  *第二步（无偏性）*：由第 10 章各估计公式的构造，
+  每个 $hat(L)$ 的期望恰是它要估计的积分，所以
+  $E[hat(L)] = E[hat(L)'] = mu$，相乘即得结论。$square$
+]
+
+证明本身短，构造才是重点：
 *它把“随机化的算子”变成了“可以放心放进损失函数的对象”*。
 同样的技巧在 NFF 的变分损失里已经出现过一次（第 8 章），
 两篇论文独立使用它，说明这是随机化物理损失的通用模式。

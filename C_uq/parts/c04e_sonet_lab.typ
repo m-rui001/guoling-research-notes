@@ -22,6 +22,21 @@
 $ hat(cal(L)) = 1/(2B) sum_(i=1)^B [ -log |Sigma_z| + op("tr")(Sigma_z) + norm(mu_z)^2 - d_z ]
     + 1/(2 B M sigma_u^2) sum_(i=1)^B sum_(j=1)^M ( hat(cal(G))(h(cal(O)_i), z_i)(y_j) - u(y_j) )^2 , $
 
+第一项为什么是这个形状：方括号内是 $op("KL")(q_E (z | dot) ‖ cal(N)(0, bold(I)))$
+对对角高斯的解析式。按 KL 的定义写对数密度差，逐步算：
+
+$ op("KL") &= E_q[log q(z) - log p(z)]
+  = E_q[-1/2 log|Sigma| - 1/2 (z - mu)^T Sigma^(-1) (z - mu) + 1/2 z^T z] - d_z \/ 2 \
+  &= 1/2 [ op("tr")(Sigma) + norm(mu)^2 - d_z - log |Sigma| ] , $
+
+三块的出处：第一个期望里的二次型用期望的线性拆开，
+$E[(z - mu)^T Sigma^(-1) (z - mu)] = op("tr")(Sigma^(-1) dot E[(z - mu)(z - mu)^T]) = op("tr")(I) = d_z$
+（协方差的定义加迹的循环性质）；
+$E[z^T z] = op("tr")(Sigma) + norm(mu)^2$（$E[z z^T] = Sigma + mu mu^T$，
+分解成方差加均值的平方）；
+$-d_z \/ 2$ 与 $-1/2 log |Sigma|$ 是两个归一化常数相减的残余
+（$1/2 log(2 pi)$ 的项相消）。期望与积分交换的合法性由高斯密度
+平方可积保证。除以 $2B$ 是批平均，$z_i$ 用重参数化采样。
 其中 $mu_z$、$Sigma_z$ 都带自变量 $(h(cal(O)_i), overline(u)_i)$。之后 Adam 更新全部参数。
 
 推断只有四步：算 $h(cal(O))$，*从先验* $z tilde cal(N)(0, I)$ *采样*，
@@ -50,8 +65,17 @@ $D_"KL" (q_E ‖ p(z))$ 把每个观测下的后验压向标准高斯，
 
 $ p_D (overline(u) | cal(O), z) = product_(i=1)^M cal(N)( u(y_i) | hat(cal(G))(y_i), M sigma_u^2 ) . $
 
-代进 ELBO 后，似然项变成 $1/(2 sigma_u^2)$ 乘“网格平均的平方误差”
-$(1/M) sum_i (hat(cal(G)) - u)^2$，与 $M$ 无关。乘 $M$ 是为了让 $M -> oo$
+“代进 ELBO 后”这一步补出中间行。ELBO 的似然项取对网格点的求和，
+逐点写出对数密度再合并：
+
+$ sum_(i=1)^M log cal(N)(u(y_i) | hat(cal(G))(y_i), M sigma_u^2)
+  = -M/2 log(2 pi M sigma_u^2)
+    - 1/(2 M sigma_u^2) sum_(i=1)^M (hat(cal(G))(y_i) - u(y_i))^2 . $
+
+第二步把平方项重排：$1/(2 M sigma_u^2) sum = 1/(2 sigma_u^2) dot (1/M) sum$，
+网格点的平均恰好消掉分母里的 $M$，于是含预测值 $hat(cal(G))$ 的数据项
+与网格数无关；第一项不含任何网络输出，对优化是常数
+（$sigma_u^2$ 在实验里按表固定）。乘 $M$ 是为了让 $M -> oo$
 时损失不塌不爆，它换来的是一条与离散化无关的解释。附录 A.3 把这件事做严：
 按 Seidman 等的函数空间 VAE（其定理 4.1 与式 (9)），在 $Omega_u subset RR^(d_y)$
 上定义解码输出 $u_sigma = u / sigma = hat(cal(G)(h, z)) / sigma + eta$，
@@ -136,7 +160,7 @@ $u_theta$ 是网络的无约束输出。齐次 Dirichlet 条件因此不是学�
 )
 
 表里 $2 times 40$ 表示两层、每层 40 个神经元，激活函数全用 tanh。
-三处值得注意。第一，$d_"emb"$ 只有 2（一维）和 3（二维），
+三处细节。第一，$d_"emb"$ 只有 2（一维）和 3（二维），
 注意力 softmax 是在 2 到 3 维的嵌入上算的，
 嵌入维度比 Deep Sets 类工作里常见的 64、128 小两个量级。
 第二，$d_z$ 从一维的 10 跳到二维的 100，而图 2(a) 只说明一维问题 10 够用，

@@ -29,47 +29,137 @@ $norm(x - y)^(-d - alpha)$ 在大距离衰减慢（重尾跳跃），
 == 内段公式的推导
 
 目标：把主值积分的球内部分写成期望。固定 $x$，用球坐标
-$y = x + r xi$（$xi$ 均匀于单位球面 $S^(d-1)$，$d y = r^(d-1) d r d xi$）：
+$y = x + r xi$：$r$ 是 $y$ 到球心的距离，$xi$ 是单位向量，
+均匀分布于单位球面 $S^(d-1)$。体积元分解为径向与角向两部分：
+$d y = r^(d - 1) d r d xi$（半径方向的 $d r$ 乘球面元 $r^(d-1) d xi$）。
+分母 $norm(x - y)^(d + alpha) = r^(d + alpha)$，与 $r^(d-1)$ 合并：
 
-$ integral_(B_(r_0)(x)) (u(x) - u(y))/(norm(x - y)^(d + alpha)) d y = integral_0^(r_0) r^(d - 1 - d - alpha) integral_(S^(d-1)) (u(x) - u(x + r xi)) d xi d r . $
+$ integral_(B_(r_0)(x)) (u(x) - u(y))/(norm(x - y)^(d + alpha)) d y = integral_0^(r_0) r^(-1 - alpha) integral_(S^(d-1)) (u(x) - u(x + r xi)) d xi d r . $
 
-球面平均的对称化是关键一步：对 $xi$ 与 $-xi$ 求平均
-（球面均匀分布对 $-xi$ 不变），
+球面平均的对称化是关键一步。$xi$ 服从球面均匀分布，
+而均匀分布旋转不变，所以换元 $xi -> -xi$ 不改变积分：
+$integral_(S^(d-1)) F(xi) d xi = integral_(S^(d-1)) F(-xi) d xi$ 对任何 $F$ 成立。
+把原式与换元后的式子相加除二：
 
-$ integral_(S^(d-1)) (u(x) - u(x + r xi)) d xi = 1/2 integral_(S^(d-1)) [2 u(x) - u(x + r xi) - u(x - r xi)] d xi , $
+$ integral_(S^(d-1)) (u(x) - u(x + r xi)) d xi = 1/2 integral_(S^(d-1)) [2 u(x) - u(x + r xi) - u(x - r xi)] d xi . $
 
-方括号里的二阶差商在 $r -> 0$ 时是 $O(r^2)$（一阶项相消），
-除以 $r^2$ 后有界，这就是把“主值发散”变成“可积期望”的全部秘密。
-代回并整理 $r$ 的幂：
+为什么这一步重要，看小 $r$ 时方括号的行为。对 $u$ 做泰勒展开到二阶
+（$xi$ 是单位向量，各方向导数有界）：
 
-$ = (|S^(d-1)|)/(2) integral_0^(r_0) (2 u(x) - u(x + r xi) - u(x - r xi)) r^(-1 - alpha) d r dot (r_0^(2 - alpha))/(r_0^(2 - alpha)) , $
+$ u(x plus.minus r xi) = u(x) plus.minus r nabla u(x) dot xi + r^2/2 xi^T nabla^2 u(x) xi + O(r^3) . $
 
-把 $r^(-1-alpha)$ 吸进采样密度：令 $f_I (r) ∝ r^(1 - alpha)$
-（在 $[0, r_0]$ 上归一化），则
+两个展开相加，一阶项 $plus.minus r nabla u dot xi$ 变号相消，
+剩下 $u(x + r xi) + u(x - r xi) = 2 u(x) + r^2 xi^T nabla^2 u(x) xi + O(r^3)$。
+于是方括号 $2 u(x) - u(x + r xi) - u(x - r xi) = O(r^2)$，
+除以 $r^2$ 后有界。对比不进行对称化的情形：
+原被积函数 $u(x) - u(x + r xi)$ 的一阶项 $-r nabla u dot xi$ 乘上
+权重 $r^(-1-alpha)$ 后按 $r^(-alpha)$ 发散，积分只能在对称极限
+（柯西主值）下理解；对称化把产生发散的一阶项整体消掉，
+剩下的量在 $r = 0$ 附近有界，期望存在，不再需要极限手续。
+这就是把“主值发散”变成“可积期望”的机制。
 
-$ integral_0^(r_0) g(r) r^(-1 - alpha) d r = (r_0^(2 - alpha))/(2 - alpha) E_(r tilde f_I)[ g(r) \/ r^2 ] , quad f_I (r) = (2 - alpha)/(r_0^(2 - alpha)) r^(1 - alpha) . $
+代回并把球面积分换成球面平均（$integral_(S^(d-1)) dot d xi = |S^(d-1)| dot E_(xi)$，
+均匀平均的定义）：
 
-合并常数即得主章节的内段公式（$|S^(d-1)| r_0^(2 - alpha) \/ (2(2 - alpha))$
-乘期望）。*采样密度正比于积分核的径向部分*：被估量 $g(r)\/r^2$
-在 $f_I$ 下有界（$g(r) = O(r^2)$ 恰好抵消 $r^2$ 分母），
-方差有限。Beta 分布采样 $r\/r_0 tilde "Beta"(2 - alpha, 1)$
-给出这条幂律密度，一次 Beta 样本换一次网络评估。
+$ integral_(B_(r_0)(x)) (u(x) - u(y))/(norm(x - y)^(d + alpha)) d y = (|S^(d-1)|)/2 integral_0^(r_0) g(r) r^(-1 - alpha) d r , quad g(r) := E_(xi)[ 2 u(x) - u(x + r xi) - u(x - r xi) ] . $
+
+把 $r$ 的幂律权重挪进采样分布。令 $f_I (r) prop r^(1 - alpha)$
+并归一化（归一化积分
+$integral_0^(r_0) r^(1 - alpha) d r = r_0^(2 - alpha)\/(2 - alpha)$）：
+
+$ f_I (r) = (2 - alpha)/(r_0^(2 - alpha)) r^(1 - alpha) , quad integral_0^(r_0) g(r) r^(-1 - alpha) d r = (r_0^(2 - alpha))/(2 - alpha) E_(r tilde f_I)[ g(r) \/ r^2 ] . $
+
+右边由期望的定义直接展开验证：
+$E_(f_I)[g(r) \/ r^2] = integral_0^(r_0) (g(r) \/ r^2) dot (2 - alpha) r^(1 - alpha) \/ r_0^(2 - alpha) d r$，
+分子里 $r^(1 - alpha)$ 与分母 $r^2$ 合并成 $r^(-1 - alpha)$，正是左边的积分。
+合并常数，$|S^(d-1)| \/ 2$ 乘 $r_0^(2 - alpha) \/ (2 - alpha)$，
+即得主章节的内段公式（系数 $|S^(d-1)| r_0^(2 - alpha) \/ (2(2 - alpha))$
+乘期望）。
+
+*采样密度为什么这样选*：上一步的泰勒展开给
+$g(r) = O(r^2)$，所以被估量 $g(r) \/ r^2$ 在 $r -> 0$ 时趋于
+径向二阶导（有界），除以 $r^2$ 的除法专门用来压住原点的奇性；
+密度里的 $r^(1 - alpha)$ 增长则把权重 $r^(-1 - alpha)$ 全部吸收。
+被估的量在整个 $[0, r_0]$ 上有界，方差有限。
+Beta 分布采样给出这条幂律：
+$R = r \/ r_0 tilde "Beta"(2 - alpha, 1)$ 的密度是
+$(2 - alpha) R^(1 - alpha)$（$[0, 1]$ 上），换元回 $r$ 恰是 $f_I$，
+一次 Beta 样本换一次网络评估。
+
+#insight("用日常语言读一遍")[
+  内段公式做了三件事。第一，把积分变量换成“方向加距离”，
+  奇异性全部集中在距离这一个变量上。第二，用对称化把
+  造成发散的一阶项消掉：差 $u$ 在两个相对方向的取值相加，
+  线性成分抵消，剩下的二阶差商除以 $r^2$ 后有界。
+  第三，把距离上的幂律权重挪进采样分布，让被估计的量
+  变成一个有界函数的普通平均。三件事合起来，
+  一个需要取对称极限的奇异积分，变成了对 $(xi, r)$ 的期望，
+  可以用有限次采样估计。
+]
 
 == 外段与 Caputo 的推导思路
 
-外段（$r in [r_0, infinity)$）同样对称化，差异只在权重常数：
-$r^(-1 - alpha)$ 在 $[r_0, infinity)$ 的积分是 $r_0^(-alpha)\/alpha$，
-采样密度 $f_O (r) = alpha r_0^alpha r^(-1 - alpha)$（重尾：
-远处贡献小但覆盖全域），对应 $r_0\/r tilde "Beta"(alpha, 1)$。
-被估量不再除 $r^2$（远处二阶差商本身 $O(r^2)$ 衰减，
-不需要除法去奇异），所以外段期望里的量是
-$2 u(x) - u(x + r xi) - u(x - r xi)$ 本身。
+外段（$r in [r_0, infinity)$）同样做对称化，差异只在权重常数。
+对称化后的积分是 $|S^(d-1)| \/ 2 integral_(r_0)^oo g(r) r^(-1 - alpha) d r$，
+这个广义积分算得出来：
 
-Caputo 导数的 MC 化同理：把
-$integral_0^t (t - tau)^(-gamma) partial_tau u d tau$ 分部积分
-（$u(t) - u(0)$ 项析出），剩余积分的核 $tau^(-gamma)$
-用 $f_(I, t)(tau) = (1 - gamma) tau^(-gamma)$ 吸收，
-得到主章节的公式。三处推导共用一个模式：
+$ integral_(r_0)^oo r^(-1 - alpha) d r = [r^(-alpha)\/(-alpha)]_(r_0)^oo = r_0^(-alpha) \/ alpha , $
+
+收敛性由 $alpha > 0$ 保证。采样密度取 $f_O (r) = alpha r_0^alpha r^(-1 - alpha)$
+（归一化检查：$integral_(r_0)^oo alpha r_0^alpha r^(-1 - alpha) d r = alpha r_0^alpha dot r_0^(-alpha) \/ alpha = 1$），
+代入期望的定义可以验证
+$integral_(r_0)^oo g(r) r^(-1 - alpha) d r = E_(f_O)[g(r)] \/ (alpha r_0^alpha)$，
+于是外段公式为系数 $|S^(d-1)| r_0^(-alpha) \/ (2 alpha)$ 乘期望。
+换元 $R = r_0 \/ r$ 可验证 $R tilde "Beta"(alpha, 1)$，
+与内段用同一类 Beta 采样（主章节的写法）。
+这条密度重尾：远处贡献被 $r^(-1 - alpha)$ 压小，但采样覆盖到无穷远。
+被估量是 $g(r)$ 本身，不再除 $r^2$：远处 $r >= r_0$ 时
+$2 u(x) - u(x + r xi) - u(x - r xi)$ 有界（$u$ 有界时被 $4 sup norm u$ 压住），
+原点的奇性在积分分段时已经留在内段，除法没有必要；
+密度恰好吸收全部 $r$ 幂，被估量有界，方差有限。
+
+Caputo 导数的 MC 化的完整推导如下。目标积分是不含
+$1 \/ Gamma(1 - gamma)$ 因子的部分（该因子是与网络无关的正常数，
+论文的估计器沿用不含它的形式，它只缩放这一项损失的尺度）：
+
+$ I := integral_0^t (t - tau)^(-gamma) (partial u)/(partial tau)(x, tau) d tau . $
+
+*第一步（选对原函数）*：直接给 $partial_tau u$ 配原函数 $u$ 会在
+$tau = t$ 处产生发散的边界项。改给差 $v(tau) := u(tau) - u(t)$ 配，
+它满足 $v(t) = 0$，恰好压住奇异端点。分部积分
+（$d/(d tau) (t - tau)^(-gamma) = gamma (t - tau)^(-gamma - 1)$）：
+
+$ I = [(t - tau)^(-gamma) v(tau)]_(tau = 0)^(tau = t) - gamma integral_0^t v(tau) (t - tau)^(-gamma - 1) d tau . $
+
+*第二步（边界项）*：$tau = t$ 端为零：$v(t) = 0$，更仔细地看
+$v(tau) approx (tau - t) partial_tau u(x, t)$ 乘 $(t - tau)^(-gamma)$
+后按 $(t - tau)^(1 - gamma) -> 0$ 消失（$gamma < 1$ 保证）。
+$tau = 0$ 端给出 $t^(-gamma) v(0) = t^(-gamma) (u(x, 0) - u(x, t))$，
+带着前面的负号进入 $I$，合计 $t^(-gamma) (u(x, t) - u(x, 0))$。
+
+*第三步（剩余积分换元）*：把 $v = u(tau) - u(t)$ 代回并变号，
+再换元 $s = t - tau$（$d tau = -d s$）：
+
+$ gamma integral_0^t (u(t) - u(tau)) (t - tau)^(-gamma - 1) d tau = gamma integral_0^t (u(t) - u(t - s)) s^(-gamma - 1) d s = gamma integral_0^t (u(t) - u(t - s)) \/ s dot s^(-gamma) d s . $
+
+*第四步（吸收核）*：换元 $s = tau t$ 把区间搬到 $[0, 1]$
+（$d s = t d tau$，$s^(-gamma) = t^(-gamma) tau^(-gamma)$）：
+
+$ gamma t^(1 - gamma) integral_0^1 (u(t) - u(t - tau t)) \/ (tau t) dot tau^(-gamma) d tau . $
+
+密度 $f_(I, t)(tau) = (1 - gamma) tau^(-gamma)$ 在 $[0, 1]$ 上归一化
+（$integral_0^1 tau^(-gamma) d tau = 1 \/ (1 - gamma)$），所以积分等于
+$1 \/ (1 - gamma)$ 乘 $E_(tau tilde f_(I, t))[(u(t) - u(t - tau t)) \/ (tau t)]$。
+合并三步：
+
+$ I = gamma/(1 - gamma) t^(1 - gamma) E_(tau tilde f_(I, t)) [ (u(x, t) - u(x, t - tau t)) \/ (tau t) ] + (u(x, t) - u(x, 0)) \/ t^gamma , $
+
+即主章节的公式。数值实现把 $tau$ 换成
+$tau_epsilon = max{tau, epsilon_t \/ t}$（主章节的 $tau_epsilon t$）：
+$tau -> 0$ 时差商的分子分母同时变小，两个几乎相等的数相减
+会吃掉有效数字，理由与内段的 $r_epsilon$ 相同。
+
+三处推导共用一个模式：
 *找出积分核的径向/时间部分，令其归一化后作为采样密度，
 被估量换成就地有界的差商*。这是重要性采样在算子估计里的标准打法。
 

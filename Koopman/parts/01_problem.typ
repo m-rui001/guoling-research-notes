@@ -167,7 +167,7 @@ $ hat(X) = mat(Psi(x_1)^T; dots.v; Psi(x_m)^T), quad hat(Y) = mat(Psi(x_2)^T; do
 
 $ K^T = hat(Y)^T hat(X) (hat(X)^T hat(X))^dagger, quad "即" quad K = hat(Y)^T hat(X) (hat(X)^T hat(X))^dagger , $
 
-其中 $A^dagger$ 表示 Moore–Penrose 伪逆。这就是 #term("EDMD", "扩展动态模式分解")。
+其中 $A^dagger$ 表示 Moore–Penrose 伪逆（不可逆情形下的“最小二乘求逆”，这里只需知道它给出上面回归问题的闭式解）。这就是 #term("EDMD", "扩展动态模式分解")。。
 当字典取恒等映射 $psi_i(x) = x_i$（直接观测状态）时，它退化成 #term("DMD", "动态模式分解")
 ，Schmid 在流体力学里提出的方法，2015 年 Williams 等人给出了它与 Koopman 算子的
 理论联系（*A data-driven approximation of the Koopman operator: extending DMD*；
@@ -204,8 +204,8 @@ $ K^T = hat(Y)^T hat(X) (hat(X)^T hat(X))^dagger, quad "即" quad K = hat(Y)^T h
   把其中一个系统一一对应地变成另一个，并且保持时间顺序
   （“$t$ 时刻的状态”仍被映到“$t$ 时刻的状态”）。
 
-  通俗说：两个系统*样子不同，但本质是同一个系统*，只是换了套坐标去描述。
-  所以“$T$ 拓扑共轭于一个线性系统”等于说：$T$ 本质上是线性的，
+  通俗说：两个系统*样子不同，但就是同一个系统*，只是换了套坐标去描述。
+  所以“$T$ 拓扑共轭于一个线性系统”等于说：$T$ 实际上是线性的，
   它在线性坐标下就是同一件事。
 ]
 
@@ -250,17 +250,18 @@ $ x_t dot(->)^(f_theta "编码器") z_t in RR^d dot(->)^(cal(K)_psi "线性推�
 
 三个部件的分工必须说清楚，否则很容易误解：
 
-- *编码器* $f_theta$ 和*解码器* $g_omega$ 都是深的非线性网络（原文用 ELU）；
+- *编码器* $f_theta$ 和*解码器* $g_omega$ 都是深的非线性网络（原文用 ELU，一种常用的神经网络激活函数）；
 - *线性性只发生在潜在动力学里*：$z_(t+1) = cal(K) z_t$，$cal(K)$ 是一个 $d times d$ 矩阵；
 - 瓶颈是*维度* $d$ 小，不是“线性层”。这一点常被误读，线性性来自 Koopman 算子的定义，
   不是来自某种架构选择。
 
 损失函数（原文 Eq. 25）是*多步一致性*：
 
-$ cal(L) = EE[ 1/(1+beta)( sum_(tau=0)^(T-1) delta^tau/N_1(delta) norm(x_(t+tau) - hat(x)_(t+tau))^2/(norm(x_(t+tau))^2 + epsilon_1) + beta sum_(tau=1)^(T-1) delta^(tau-1)/N_2(delta) norm(z_(t+tau) - z_(t+tau))^2/(norm(z_(t+tau))^2 + epsilon_2) ) ] + Omega, $
+$ cal(L) = EE[ 1/(1+beta)( sum_(tau=0)^(T-1) delta^tau/N_1(delta) norm(x_(t+tau) - hat(x)_(t+tau))^2/(norm(x_(t+tau))^2 + epsilon_1) + beta sum_(tau=1)^(T-1) delta^(tau-1)/N_2(delta) norm(z_(t+tau) - hat(z)_(t+tau))^2/(norm(hat(z)_(t+tau))^2 + epsilon_2) ) ] + Omega, $
 
 其中第一项是多步解码重构误差，第二项是*潜在一致性*误差，它比较“由 $cal(K)^tau z_t$ 滚出来的
-潜在表示”与“把真实未来状态 $x_(t+tau)$ 编码得到的潜在表示”。$delta in (0,1]$ 对远期步骤打折。
+潜在表示”与“把真实未来状态 $x_(t+tau)$ 编码得到的潜在表示”
+（记 $hat(z)_(t+tau) = f_theta(x_(t+tau))$）。$delta in (0,1]$ 对远期步骤打折。
 
 #insight("为什么要多步，而不是一步")[
   因为非正规系统里，一些小振幅但“高度可观测”的特征会在若干步之后把能量注入大模式。
@@ -322,7 +323,7 @@ $ cal(K)_"stable" = mat(-sigma_1^2 & zeta_1 & & ; -zeta_1 & -sigma_2^2 & zeta_2 
 会带来特征值 $(2 n_j + 1) lambda_j$，这在 Koopman 理论里是已知的非唯一性问题）。
 
 #warn("这一分支的局限")[
-  它假设特征值实部非正，因此*排除了真正的不稳定系统*，也排除了瞬态增长。
+  它假设特征值实部非正，因此*排除了确实不稳定的系统*，也排除了瞬态增长。
   更关键的是它自己承认：*不处理连续谱*，而连续谱恰恰是混沌系统拥有的东西。
 
   而且它仍然只控制谱的位置，不控制潜在表示里有多少信息、分布在几个方向上。
@@ -377,13 +378,15 @@ $ cal(E)_"con" = sum_(k=1)^kappa [ 1/(2k) norm(D_(k *) C_(* k) - I_k)_F^2 + 1/(2
 
 $ hat(R)_2[chi_0, chi_1] = norm( C_(0 0)^(-1\/2) C_(0 1) C_(1 1)^(-1\/2) )_F^2, quad C_(0 0) = EE[chi_0 chi_0^T], C_(0 1) = EE[chi_0 chi_1^T] . $
 
+其中各个 $C$ 是协方差矩阵（一批向量的各坐标之间的联合波动，对角线是各坐标的方差；第 0 章末节有最小包）。
+
 这个量的意义是：*它是两个特征集之间典型相关系数（canonical correlations）的平方和，
 等价于被这两个子空间捕捉到的 Koopman 奇异值的平方和 $sum_i sigma_i^2$*。
 变分定理保证它是 Koopman 算子谱内容的一个*下界*，最大化它就会把子空间推向主导奇异函数。
 
 #insight("VAMPnets 与 Koopman 自编码器的三点区别")[
   1. *没有解码器*，也没有重构项。训练信号是一个*谱下界*，直接作用于算子本身。
-  2. 输出层用 Softmax（$chi_i >= 0, sum_i chi_i = 1$），激活值读作“隶属概率”，
+  2. 输出层用 Softmax（把任意实数向量变成满足 $chi_i >= 0, sum_i chi_i = 1$ 的概率表），激活值读作“隶属概率”，
      $K$ 成为模糊 MSM 的转移矩阵，传播概率密度。这带来了一个额外的好处：
      模型的统计性质直接可解释（implied timescales $t_i = -tau \/ ln abs(lambda_i)$、
      Chapman–Kolmogorov 检验 $K(n tau) = K^n(tau)$）。
@@ -392,7 +395,7 @@ $ hat(R)_2[chi_0, chi_1] = norm( C_(0 0)^(-1\/2) C_(0 1) C_(1 1)^(-1\/2) )_F^2, 
 
 它的问题在于：*VAMP-2 是一个标量分数，对“信息分布在几个方向上”不敏感*。
 一个只捕捉到一个极强的奇异值的子空间，和一个均匀捕捉到十个中等奇异值的子空间，
-在这个分数上可能一样好。这正是本文用 von Neumann 熵解决的问题。
+在这个分数上可能一样好。本文用 von Neumann 熵解决的就是这个问题。
 
 === 分支四：变分 Koopman 模型（Wu et al. 2017）
 
@@ -433,7 +436,8 @@ $ EE[chi_i(x_(t+tau)) | x_t] approx k_i^T chi(x_t) $
   “把算子 $G$ 用在特征上之后，一步预测的期望平方误差”。最小化风险就是找最好的 $G$。
 ]
 
-设定：马尔可夫链，不变测度 $pi$（即系统长期停留的概率分布），
+设定：马尔可夫链（下一时刻的分布只依赖当前时刻的随机过程），
+不变测度 $pi$（即系统长期停留的概率分布），
 转移算子 $A_pi$ 作用在 $L^2_pi$ 上。
 限制到 RKHS $cal(H)$（特征映射 $phi$，核 $k$），定义*风险*
 
@@ -449,7 +453,7 @@ $ cal(R)(G) = cal(R)_0 + cal(E)(G), quad cal(R)_0 = norm(S_pi)_"HS"^2 - norm(Z_p
 
 $ hat(G)_(r, gamma) = arg min { hat(cal(R))(G) + gamma norm(G)_"HS"^2 : op("rank")(G) <= r }, $
 
-这是真正的秩约束风险最小化。理论保证：定理 1 说明 Koopman 模式分解与特征值的误差
+这是带显式秩约束的风险最小化。理论保证：定理 1 说明 Koopman 模式分解与特征值的误差
 被 $norm(Z_pi - S_pi G)$ 控制，也就是被 $sqrt(cal(E)(G))$ 控制。
 
 Bevanda 等人（2023，NeurIPS）的 #term("KKR", "Koopman 核回归") 则指出了一个更根本的问题。
@@ -473,7 +477,7 @@ $ K^lambda (bold(x)_T, bold(x)_T') = integral_0^T integral_0^T e^(-lambda(tau - 
 （定理 2：$norm(M - hat(M)) -> 0$，不只是强算子拓扑收敛）。
 
 #warn("统计分支的局限")[
-  这一支给出了最漂亮的理论，但它回答的是*“如何正确地估计算子”*，不是*“潜在表示应该长什么样”*。
+  这一支给出了最完备的理论，但它回答的是*“如何正确地估计算子”*，不是*“潜在表示应该长什么样”*。
   它的假设（有界 RKHS 范数、平稳性）也限制了适用范围。
   它同样没有给“潜在维度该多大”“信息该怎么分配”提供准则。
 ]
@@ -486,7 +490,7 @@ $ K^lambda (bold(x)_T, bold(x)_T') = integral_0^T integral_0^T e^(-lambda(tau - 
 
 $ g^(t+1) = K g^t + L u^t, quad K = sigma times hat(K), quad sigma in RR^(N times N times h), hat(K) in RR^(h times m times m). $
 
-其中 $sigma$ 是一个 one-hot 索引张量，把每个 $(i,j)$ 块分配给某个类型，
+其中 $sigma$ 是一个 one-hot 索引张量（one-hot：只有一个分量是 1、其余全为 0 的向量），把每个 $(i,j)$ 块分配给某个类型，
 $hat(K)$ 存 $h$ 个共享子矩阵。参数量从 $N^2 m^2$ 降到 $h m^2$，*与 $N$ 无关*。
 
 训练目标是 $cal(L) = cal(L)_"ae" + lambda_1 cal(L)_"pred" + lambda_2 cal(L)_"metric"$，
@@ -533,13 +537,16 @@ KoopmanNet 把非线性序列转成线性动力系统，KalmanNet 在这个线�
 
 #definition("三种失败模式（论文归纳）")[
   *时间一致性（temporal coherence）丧失*：潜在轨迹不再随时间一致地演化。
-  自回归展开会放大小的偏差，第 1 步的小误差到第 50 步可能是灾难。
+  自回归（把模型自己前一步的输出当作下一步的输入，逐步推进）展开会放大小的偏差，
+  第 1 步的小误差到第 50 步可能是灾难。
 
   *预测充分性（predictive sufficiency）不足*：保留的模式太少，系统行为被过度简化。
-  典型症状是“模式坍缩”，潜在协方差的谱高度倾斜，有效维度接近 1。
+  典型症状是“模式坍缩”：潜在协方差矩阵（一批潜在向量的协方差，其特征值给出方差
+  在各方向上的占比，第 0 章末节有最小包）的特征值高度倾斜，有效维度接近 1。
 
   *结构一致性（structural consistency）被破坏*：潜在空间不再支持 $z_n -> z_(n+1)$ 的线性演化。
-  这是 Koopman 定义本身的要求，但比普通 VAE 的重构要求*严格得多*。
+  这是 Koopman 定义本身的要求，但比普通 VAE（变分自编码器，自编码器的概率版，
+  第 0.7 节与第 2 章展开）的重构要求*严格得多*。
 ]
 
 #figure(

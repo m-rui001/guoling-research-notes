@@ -25,10 +25,32 @@ Guo–Liu–Zhou（2018）的两步法把两件事解耦：
 $ bold(H) = mat(mu_0 & mu_1 & dots.c & mu_k; mu_1 & mu_2 & dots.c & mu_(k+1); dots.v & & & dots.v; mu_k & mu_(k+1) & dots.c & mu_(2k)) , $
 
 要求它在 Hamburger 意义下正定（$det bold(H) > 0$，即矩序列对应一个真实测度）。
-Cholesky 分解 $bold(H) = bold(R)^T bold(R)$ 后，三项递推系数直接从 $R$ 读出
-（Mysovskih 定理 + Golub–Welsch 公式）：
+Cholesky 分解 $bold(H) = bold(R)^T bold(R)$ 后，三项递推系数直接从 $R$ 读出。
+这一步为什么合法，链路有三环：
+
+*第一环，$bold(H)$ 是单项式的 Gram 矩阵。* 它的 $(j, l)$ 元按矩的定义
+
+$ bold(H)_(j, l) = mu_(j + l) = integral x^(j + l) rho(x) d x = ⟨x^j, x^l⟩_rho , $
+
+正是单项式 $x^j$ 与 $x^l$ 的内积。所以“$bold(H)$ 正定”就是
+“单项式在 $L^2(rho)$ 中线性无关”，也就是存在 $k + 1$ 个独立的
+正交多项式。
+
+*第二环，Cholesky 分解是 Gram–Schmidt 的矩阵写法。*
+对 Gram 矩阵做 $bold(H) = bold(R)^T bold(R)$（$bold(R)$ 上三角），
+$bold(R)$ 的每一行装的正是正交化后那个多项式的单项式系数，
+对角元 $r_(j, j)$ 是它的长度。分解唯一（正定矩阵的 Cholesky
+因子唯一），所以读出的系数不依赖实现细节。
+
+*第三环，系数从 $bold(R)$ 的比值读出。* 把三项递推
+$x phi_(j-1) = b_(j-1) phi_(j-2) + a_j phi_(j-1) + b_j phi_j$
+逐个系数与 $bold(R)$ 的行比对（Golub–Welsch 公式），得
 
 $ a_j = r_(j, j+1)\/r_(j, j) - r_(j-1, j)\/r_(j-1, j-1) , quad b_j = r_(j+1, j+1)\/r_(j, j) . $
+
+读法：$a_j$ 是相邻两行“斜出量”之差，$b_j$ 是相邻两个对角元之比
+（长度在递推里的传递）。第 17 章的手算例把这条链的每个数字
+走了一遍，可以对照验证。
 
 #insight("为什么这条路稳")[
   直接解矩匹配方程（经典 aPC 的做法）等价于求一个高次 Vandermonde 矩阵的逆，
@@ -54,8 +76,17 @@ $ f_N = arg min_(p in P_N) 1/M sum_(m=1)^M w_m (p(z_m) - f(z_m))^2 , quad w_m = 
 ]
 
 Legendre 基的 $kappa(N) tilde N^2$，要求 $M >> N^2$，不划算。
-改用加权基 $hat(Phi)_j = Phi_j \/ sqrt(K(z))$ 后 $hat(kappa)(N) = N$
-（*最优*）。严格无偏要求按 $kappa(z) rho(z) = rho(z)\/K(z)$ 采样
+改用加权基 $hat(Phi)_j (z) = sqrt(K(z)) dot Phi_j (z)$（每个采样点上把
+全体基函数值同乘 $sqrt(K(z))$，等价于给第 $m$ 个方程配权重
+$w_m = K(z_m)$）后，逐点算加权和：
+
+$ sum_(j=1)^N hat(Phi)_j^2 (z) = K(z) sum_(j=1)^N Phi_j^2 (z)
+  = (N \/ sum_l Phi_l^2 (z)) dot sum_(j=1)^N Phi_j^2 (z) = N , $
+
+第二个等号代入 $K$ 的定义式，分子分母相消，没有用到不等式。
+每个点上恰好等于 $N$，最大值自然是 $N$，所以 $hat(kappa)(N) = N$
+（*最优*）。
+严格无偏要求按 $kappa(z) rho(z) = rho(z)\/K(z)$ 采样
 （采样偏向能量大的点），而位势论给出
 $kappa rho ->$ 平衡测度（$N -> infinity$），于是用平衡测度采样：
 有界域上是张量积 Chebyshev 测度（$z_m = cos(u_m)$，*对任意容许输入密度普适*）；

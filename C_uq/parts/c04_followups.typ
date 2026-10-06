@@ -45,13 +45,52 @@ $s(z_t, x, t; theta) approx nabla_(z_t) log p_D (z_t | x)$，
   且 $s$ 恰为条件 score $nabla_(z_t) log p_D (z_t | x)$。
 ]
 
-证明分两段：第一段是 VAE 型上界加独立性（附录证明 $x perp z_T$）；
-第二段用 #term("Girsanov 定理", "随机分析中处理 SDE 漂移项变化的测度变换定理，给出两个漂移对应的分布之间的密度比") 处理逆时 SDE 的测度变换，
-配合分部积分恒等式 $E_p[s^T nabla_z log p] = -E_p["tr"](partial_z s)$
-把 score 的期望项化成散度项。最后两块与参数无关，
-所以训练损失就是 $cal(L)(theta, phi)$。
+证明分两段，各用一条工具。这里把工具用在哪、靠什么假设成立交代清楚。
 
-训练用 #term("Hutchinson 估计器", "用随机向量的期望估计矩阵的迹或算子的散度，代价远低于显式求和") 估计散度项（Rademacher 随机向量 $epsilon$）：
+*第一段：VAE 型上界。* 联合分布的 KL 按链式法则拆成
+"边缘的 KL + 条件的 KL"，条件的 KL 非负（第 0 章 §0.4），
+扔掉它就把对 $x$ 的 KL 控制在联合的 KL 之下；
+附录单独证明 $x perp z_T$（条件 (b) 的信息耗尽），
+独立时含 $z_T$ 的项退化成两个先验之间的 KL，可以显式算。
+
+*第二段：用 #term("Girsanov 定理", "随机分析中处理 SDE 漂移项变化的测度变换定理，给出两个漂移对应的分布之间的密度比") 处理逆时 SDE。* 这一步回答的问题：
+编码过程沿逆时 SDE 走出的路径分布与解码过程的路径分布，
+两者的密度比是多少。Girsanov 定理给答案时用到两条假设，
+缺一条结论就不成立：一是两条 SDE 的*扩散系数相同*
+（解码与逆时编码共用同一个 $g(t) d W_t$，只允许漂移不同），
+二是漂移差平方可积。在假设下，两条路径测度之间的 KL
+等于漂移差平方除以 $2 g(t)^2$ 后对时间积分的期望。
+把两条 SDE 的漂移代进去（一条含 score 网络 $s$，
+一条含真实条件 score $nabla_(z_t) log p_D (z_t | x)$），
+出现 $E[norm(s)^2]$ 与交叉项 $E[s^T nabla log p]$。
+
+*分部积分恒等式。* 交叉项里的真实 score 未知，要换成散度。
+逐行推导（记 $p$ 为出现 $s$ 的那个密度，维数记为 $d$）：
+
+$ E_p[s^T nabla_z log p] &= integral s^T (nabla p \/ p) dot p d z
+    = integral s^T nabla p d z \
+  &= integral nabla dot (p s) d z - integral p nabla dot s d z
+    = -E_p[nabla dot s] . $
+
+第一行把 $nabla log p$ 写成 $nabla p \/ p$，$p$ 与约掉；
+第二行用乘积法则 $nabla dot (p s) = s^T nabla p + p nabla dot s$ 移项；
+第三行第一项是全散度的积分，由散度定理化为边界通量，
+它在"$p$ 在无穷远处的衰减快于 $s$ 的增长"时为零
+（这是分部积分合法性的条件，常见网络的输出满足）。
+合并成一句：$E[norm(s)^2 + 2 nabla dot s] = E[norm(s - nabla log p)^2] - E[norm(nabla log p)^2]$，
+展开完全平方并代入恒等式即得。左端是损失里出现的形状，
+右端说明它在度量 score 离真实 score 有多远。
+最后把各项按参数分拣：含 $theta$ 的只剩 $cal(L)(theta, phi)$，
+$E[norm(nabla log p_D (z_t))^2]$ 与 $log Z$ 两块不含 $theta$，
+对优化是常数，所以训练损失就是 $cal(L)(theta, phi)$。
+
+训练用 #term("Hutchinson 估计器", "用随机向量的期望估计矩阵的迹或算子的散度，代价远低于显式求和") 估计散度项（Rademacher 随机向量 $epsilon$）。
+无偏性三行可得：$epsilon^T (partial s \/ partial z_t) epsilon$ 是标量，
+标量等于自己的迹，由迹的循环性质它等于
+$"tr"((partial s \/ partial z_t) dot epsilon epsilon^T)$；
+$epsilon$ 的分量独立取 $plus.minus 1$，故 $E[epsilon epsilon^T] = bold(I)$；
+期望与迹交换，得 $E[epsilon^T (partial s \/ partial z_t) epsilon] = "tr"(partial s \/ partial z_t) = nabla dot s$。
+计算代价只是一次雅可比向量积：
 
 $ cal(L)_t = (T g(t)^2)/2 (norm(s)^2 + 2 (partial[epsilon^T s])/(partial z_t) epsilon) , $
 
@@ -211,7 +250,8 @@ $p_D (overline(u) | cal(O), z) = product_i cal(N)(u(y_i) | hat(cal(G))(y_i), M s
 
 $ cal(L) = E[ D_"KL" (q_E (z | overline(u), cal(O)) ‖ p(z)) - E_(q_E)[log p_D (overline(u) | cal(O), z)] ] , $
 
-展开后 KL 项有解析式（对角高斯对标准高斯），似然项用重参数化采样。
+展开后 KL 项有解析式（对角高斯对标准高斯，逐项展开见第 14 章），
+似然项用重参数化采样。
 推断时多次采 $z$、前向、统计条件分布。
 
 #figure(

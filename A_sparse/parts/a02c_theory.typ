@@ -23,9 +23,26 @@ $L_i (n)$ 就是主定理里的分布常数（Jacobi：常数；指数型：$C n
 这一层是唯一的“硬分析”。
 
 *第二层：矩阵 Concentration。* 把 $norm(bold(D) bold(v))_2^2$ 写成
-独立采样量的和：每个样本贡献一个秩一矩阵 $psi(bold(x)_m) psi(bold(x)_m)^T$。
-其期望恰好是单位阵（离散正交系统的定义），于是
-$norm(bold(D) bold(v))_2^2$ 集中在 $M norm(bold(v))_2^2$ 附近。
+独立采样量的和。先按范数定义展开（$bold(D)$ 的第 $m$ 行是
+$psi(bold(x)_m)^T$）：
+
+$ norm(bold(D) bold(v))_2^2
+  = bold(v)^T bold(D)^T bold(D) bold(v)
+  = sum_(m=1)^M (psi(bold(x)_m)^T bold(v))^2 , $
+
+第二个等号来自 $bold(D)^T bold(D) = sum_m psi(bold(x)_m) psi(bold(x)_m)^T$：
+$bold(D)^T bold(D)$ 的 $(j, k)$ 元把各行贡献求和
+$sum_m phi_j (bold(x)_m) phi_k (bold(x)_m)$，正是 $M$ 个秩一矩阵的和。
+两边取期望，交换求和与期望（有限和总可以交换，这里不需要独立性）：
+
+$ E[norm(bold(D) bold(v))_2^2]
+  = sum_(m=1)^M E[(psi(bold(x)_m)^T bold(v))^2]
+  = M bold(v)^T E[psi(bold(X)) psi(bold(X))^T] bold(v)
+  = M norm(bold(v))_2^2 , $
+
+最后一个等号用离散正交性：$E[psi_j psi_k] = delta_(j k)$（引理的内容），
+中间的矩阵就是单位阵。于是 $norm(bold(D) bold(v))_2^2$ 的平均水平是
+$M norm(bold(v))_2^2$，随机波动集中在这条水平线附近。
 集中的宽度由两个量决定：单个秩一项的范数界（第一层给的 $L_i$）
 与有效维数 $N$。矩阵 Bernstein 或 Mendelson 的小球法给出：
 样本量 $M$ 达到 $L s log^3 s log N$ 量级时，对所有 $s$-稀疏向量
@@ -61,14 +78,49 @@ $norm(bold(D) bold(v))_2^2$ 集中在 $M norm(bold(v))_2^2$ 附近。
 ]
 
 #proof[
-  两个密度相除：$w tilde(rho) = (1\/kappa)(kappa rho \/ c) = rho \/ c$。
-  对 $h$ 积分即得。逐行成立，对矩阵形式
-  $E[w(bold(z)) bold(psi)(bold(z)) bold(psi)(bold(z))^T] = (1\/c) bold(I)$
-  同样成立（逐元素取 $h = phi_j phi_k$）。$square$
+  把两个定义并排摆好：采样密度 $tilde(rho)(z) = kappa(z) rho(z) \/ c$，
+  权重 $w(z) = 1 \/ kappa(z)$，$c = integral kappa rho$ 与 $z$ 无关。
+
+  *第一步（权重乘密度，看剩下什么）。*
+
+  $ w(z) tilde(rho)(z) = (1\/kappa(z)) dot (kappa(z) rho(z) \/ c) = rho(z) \/ c . $
+
+  $kappa(z)$ 在分子分母各出现一次、直接消去。消去合法的条件：
+  $kappa(z) > 0$ 对每个 $z$ 成立，它是平方和的倒数，处处为正，除法不出问题。
+
+  *第二步（按定义算期望）。* 随机变量 $z$ 按密度 $tilde(rho)$ 抽取，
+  期望按定义是加权积分，把被积函数整理成第一步的形状：
+
+  $ E_(z tilde tilde(rho))[w(z) h(z)]
+    = integral w(z) h(z) tilde(rho)(z) d z
+    = integral h(z) dot (w(z) tilde(rho)(z)) d z
+    = (1\/c) integral h(z) rho(z) d z . $
+
+  第三个等号代入第一步的乘积 $w tilde(rho) = rho \/ c$，常数 $1\/c$
+  与 $z$ 无关，提到积分号外。期望与真期望只差常数因子 $1\/c$。
+
+  *第三步（矩阵版本按元素验证）。* 要证
+  $E[w(bold(z)) bold(psi)(bold(z)) bold(psi)(bold(z))^T] = (1\/c) bold(I)$。
+  左端矩阵的 $(j, k)$ 元是期望
+  $E[w(z) phi_j (z) phi_k (z)]$（外积的元素定义），取第二步里的
+  $h = phi_j phi_k$，得到 $(1\/c) integral phi_j phi_k rho$。
+  而 $bold(psi)$ 关于 $rho$ 正交归一，这个积分恰好是
+  $delta_(j k)$，所以矩阵的每个元素都是 $(1\/c) delta_(j k)$，
+  即 $(1\/c) bold(I)$。矩阵等式按分量逐一验证，合法。
+  $square$
 ]
 
-这条命题同时解释了两个设计选择。第一，为什么权重必须是
-$1\/kappa$（而不是别的）：只有它能消掉采样偏置。第二，
+#insight("用日常语言读一遍")[
+  这几步合起来说的是：按 $kappa rho$ 采样会系统性偏向能量高的区域，
+  直接平均会把这些区域算重；给每个样本乘 $1\/kappa$ 恰好把多算的
+  份额除回去，平均意义下恢复按原密度 $rho$ 采样的结果。剩下的偏差
+  只有一个与被估函数无关的常数 $1\/c$，而最小二乘解对整体缩放不敏感
+  （目标与约束同乘常数，解不变），所以这个常数不造成任何失真。
+]
+
+这条命题同时解释了两个设计选择。第一，为什么权重必须取
+$1\/kappa$：从第一步的计算看，只有这个幂次能把采样密度里多出来的
+$kappa$ 恰好消掉，换成任何别的权重都会留下依赖 $z$ 的剩余偏置。第二，
 为什么采样要偏向 $kappa$ 大（能量高）的区域：这样 $c$ 有限且
 估计的方差被 $w$ 的有界性控制。若反过来从 $1\/kappa$ 小的区域
 多采样，$w$ 会在那里爆炸，方差失控。

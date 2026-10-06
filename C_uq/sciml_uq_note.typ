@@ -99,6 +99,7 @@
 
 #pagebreak()
 
+#include "parts/c00_foundation.typ"
 #include "parts/c01_uq_basics.typ"
 #include "parts/c02_survey.typ"
 #include "parts/c02b_methods.typ"

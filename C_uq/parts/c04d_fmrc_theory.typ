@@ -70,16 +70,40 @@ decomposability 说“未来状态可以由 $r(y)$ 加一层与过去无关的�
 ]
 
 #proof[
-  必要性：把 $p_tau (x, y) = p_tau^D (x, r(y)) p_"local" (r(y), y)$ 代入反向密度，
-  分子里的 $p_(text("local"))$ 与归一化里的它相消，得到
-  $p_(-tau)(y, x) = rho_0(x) p~_tau^D (x, r(y)) \/ integral rho_0(x) p~_tau^D (x, r(y)) d x$，
-  其中 $p~_tau^D$ 吸收了与 $r(y)$ 有关的常数，右端只通过 $r(y)$ 依赖 $y$。
+  必要性，分三步。
+  *第一步：代入反向密度的定义。* 反向密度是 Bayes 反演：
+  $p_(-tau)(y, x) = rho_0(x) p_tau (x, y) \/ rho_1(y)$
+  （联合密度 $rho(x, y) = rho_0(x) p_tau (x, y)$ 除以 $y$ 的边缘）。
+  代入 decomposability 的分解式：
+
+  $ p_(-tau)(y, x) = (rho_0(x) p_tau^D (x, r(y)) p_"local" (r(y), y)) \/ rho_1(y) . $
+
+  *第二步：把分母算开。* 按 $rho_1$ 的定义对 $x$ 积分：
+
+  $ rho_1(y) = integral rho_0(x) p_tau^D (x, r(y)) p_"local" (r(y), y) d x
+    = p_"local" (r(y), y) dot integral rho_0(x) p_tau^D (x, r(y)) d x , $
+
+  第二个等号的依据：$p_"local" (r(y), y)$ 不含积分变量 $x$，
+  提出积分号。这就是后文"分子里的 $p_"local"$ 与归一化里的它相消"中
+  归一化里的那一份。
+
+  *第三步：约分。* 把第二步代回第一步，$p_"local"$ 上下消去：
+
+  $ p_(-tau)(y, x) = (rho_0(x) p_tau^D (x, r(y))) \/ (integral rho_0(x) p_tau^D (x, r(y)) d x) , $
+
+  右端只通过 $r(y)$ 依赖 $y$，把它取作 $p_(-tau)^D (r(y), x)$ 即为所求
+  （若分母还差一个只依赖 $r(y)$ 的常数因子，并进 $p_(-tau)^D$ 的定义即可）。
 
   充分性：由 $p_(-tau)^D (r(y), x)$ 反解
   $p_tau (x, y) = p_(-tau)(y, x) rho_1(y) \/ rho_0(x)
     = [ p_(-tau)^D (r(y), x) \/ integral rho_1(y) p_(-tau)^D (r(y), x) d y ] rho_1(y)$，
-  方括号里第一项只依赖 $(x, r(y))$，$rho_1(y)$ 拆成
-  “只依赖 $r(y)$ 的因子”乘“集内密度”，正好是 $p_tau^D dot p_"local"$ 的形状。$square$
+  其中分母用了 $integral rho_1(y) p_(-tau)^D (r(y), x) d y = rho_0(x)$
+  （把 $p_(-tau)(y, x) = rho_0(x) p_tau (x, y) \/ rho_1(y)$ 乘 $rho_1(y)$
+  后对 $y$ 积分，右端 $rho_0(x) integral p_tau (x, y) d y = rho_0(x)$，
+  转移密度对 $y$ 归一）。方括号里第一项只依赖
+  $(x, r(y))$，取它为 $p_tau^D (x, r(y))$；剩下的 $rho_1(y)$ 取为
+  $p_"local"$（$p_"local"$ 的定义本就允许任意依赖目标点 $y$），
+  正好是 $p_tau^D dot p_"local"$ 的形状。$square$
 ]
 
 这条引理的用处是工程性的：它说明做反向拟合时，
@@ -189,10 +213,33 @@ Lipschitz 常数记 $tilde(L)_s$，控制 $(hat(X), X_1)$ 与 $(X, X_1)$ 的 $W_
 
 $ norm(cal(K)_tau - hat(cal(K))_L)_H
     = sup { angle(g, cal(K)_tau h - hat(cal(K))_L h)_(rho_0) :
-        norm(g)_(H^1(rho_0)) <= 1, norm(h)_(H^1(rho_1)) <= 1 } , $
+        norm(g)_(H^1(rho_0)) <= 1, norm(h)_(H^1(rho_1)) <= 1} , $
 
 把联合密度的 $dot(H)^(-1)$ 误差限制在形如 $g(x) h(y)$ 的张量测试函数上，
-正好就是上式。于是主定理：
+正好就是上式。这个"正好"拆成三步：
+
++ *把算子作用写成对联合密度的配对。* Koopman 算子按密度前传：
+  $(cal(K)_tau h)(x) = integral p_tau (x, y) h(y) d y$。代入内积的定义：
+
+  $ angle(g, cal(K)_tau h)_(rho_0)
+    = integral g(x) [ integral p_tau (x, y) h(y) d y ] rho_0(x) d x
+    = integral integral g(x) h(y) rho_0(x) p_tau (x, y) d y d x , $
+
+  读法：末端的被积对象是联合密度 $rho(x, y) = rho_0(x) p_tau (x, y)$
+  与测试函数 $g(x) h(y)$ 的乘积。
++ *两个算子相减，认出密度差。* $hat(cal(K))_L$ 同样按某个联合密度前传
+  （水平集内的平均，对应密度 $hat(rho)$）。两个配对相减时
+  测试函数 $g h$ 不变，剩下的全部差别在被积的密度里：
+  $angle(g, (cal(K)_tau - hat(cal(K))_L) h)_(rho_0)
+    = angle(g h, rho - hat(rho))$，
+  右端是联合密度差 $delta rho$ 对测试函数 $g h$ 的作用。
++ *部分上确界不超过全上确界。* 算子范数的上确界只遍历
+  能写成 $g(x) h(y)$ 乘积形状的测试函数；$dot(H)^(-1)$ 范数的上确界
+  遍历全部单位球测试函数，张量积是其中的子集。
+  子集上的最大读数不超过全集上的最大读数，
+  于是 $norm(cal(K)_tau - hat(cal(K))_L)_H <= norm(rho - hat(rho))_(dot(H)^(-1))$。
+
+于是主定理：
 
 #proposition("定理（主定理）")[
   在砖二、砖三成立且砖一的密度支配条件以常数 $beta, tilde(beta)$ 成立时，

@@ -41,29 +41,51 @@ sPI-GeM 的“基无收敛理论”是理论缺位，没有任何已知手段能
 
 == 选型决策
 
+选型从两个问题入手：方程里有没有分数阶导数，以及解要不要随时间演化。
+蓝色框是需要你回答的问题，绿色框是走到那一支后的推荐方法；
+连线上的“是/否”标明对应哪个答案。
+
 #align(center, canvas({
   import draw: *
   import "../../preamble.typ": cnode
   let cb = rgb("#1a4f9a")
   let cg = rgb("#4a7c59")
-  let c2 = rgb("#b8860b")
-  content((0, 0), cnode(5.2cm, 1.0cm, cb, [方程里有分数阶导数?], size: 9pt))
-  content((-4.0, -1.8), cnode(4.6cm, 1.0cm, cg, [是：MC-PINN（稳态/参数）], size: 8.5pt))
-  content((4.0, -1.8), cnode(4.6cm, 1.0cm, cg, [是 + 随机 + 时间：BO-fPINN], size: 8.5pt))
-  content((0, -1.8), cnode(5.2cm, 1.0cm, cb, [否：解要随时间演化?], size: 9pt))
-  content((-4.0, -3.6), cnode(4.6cm, 1.0cm, cg, [是：NN-DO/BO], size: 8.5pt))
-  content((4.0, -3.6), cnode(4.6cm, 1.0cm, cg, [否：NN-aPC（低维）], size: 8.5pt))
-  content((0, -5.4), cnode(6.4cm, 1.0cm, c2, [需要解的完整分布/密度？或空间维数高？], size: 8.5pt))
-  content((0, -7.0), cnode(6.4cm, 1.0cm, c2, [NFF（低空间维，要密度） / sPI-GeM（高维，要采样）], size: 8.5pt))
-  line((0, -0.55), (0, -1.25), stroke: 1pt + cb, mark: (end: ">", fill: cb))
-  line((-1.3, -2.3), (-4.0, -1.25), stroke: 0.9pt + cg, mark: (end: ">", fill: cg))
-  line((1.3, -2.3), (4.0, -1.25), stroke: 0.9pt + cg, mark: (end: ">", fill: cg))
-  line((0, -2.3), (0, -1.25), stroke: 1pt + cb, mark: (end: ">", fill: cb))
-  line((-1.3, -4.1), (-4.0, -3.05), stroke: 0.9pt + cg, mark: (end: ">", fill: cg))
-  line((1.3, -4.1), (4.0, -3.05), stroke: 0.9pt + cg, mark: (end: ">", fill: cg))
-  line((0, -4.1), (0, -4.85), stroke: 1pt + c2, mark: (end: ">", fill: c2))
-  line((0, -5.9), (0, -6.45), stroke: 1pt + c2, mark: (end: ">", fill: c2))
+  content((0, 0), cnode(5.0cm, 1.0cm, cb, [方程里有分数阶导数？], size: 9pt))
+  content((-4.2, -2.0), cnode(3.8cm, 1.0cm, cb, [解要随时间演化？], size: 8.5pt))
+  content((4.2, -2.0), cnode(3.8cm, 1.0cm, cb, [解要随时间演化？], size: 8.5pt))
+  content((-6.5, -4.0), cnode(3.0cm, 1.0cm, cg, [NN-DO/BO（整数阶、时变）], size: 8pt))
+  content((-2.2, -4.0), cnode(3.6cm, 1.0cm, cb, [需要完整分布或密度？或空间维数高？], size: 8pt))
+  content((2.2, -4.0), cnode(3.6cm, 1.0cm, cg, [MC-PINN（稳态/参数）], size: 8pt))
+  content((6.5, -4.0), cnode(3.0cm, 1.0cm, cg, [BO-fPINN（分数阶、时变）], size: 8pt))
+  content((-3.6, -6.0), cnode(4.4cm, 1.1cm, cg, [NFF（低空间维，要密度）\ 或 sPI-GeM（高维，要采样）], size: 8pt))
+  content((0.8, -6.0), cnode(2.8cm, 1.0cm, cg, [NN-aPC（低维，只要统计量）], size: 8pt))
+  line((0, -0.5), (-4.2, -1.5), stroke: 1pt + cb, mark: (end: ">", fill: cb))
+  line((0, -0.5), (4.2, -1.5), stroke: 1pt + cb, mark: (end: ">", fill: cb))
+  line((-4.2, -2.5), (-6.5, -3.5), stroke: 0.9pt + cb, mark: (end: ">", fill: cb))
+  line((-4.2, -2.5), (-2.2, -3.5), stroke: 0.9pt + cb, mark: (end: ">", fill: cb))
+  line((4.2, -2.5), (2.2, -3.5), stroke: 0.9pt + cb, mark: (end: ">", fill: cb))
+  line((4.2, -2.5), (6.5, -3.5), stroke: 0.9pt + cb, mark: (end: ">", fill: cb))
+  line((-2.2, -4.5), (-3.6, -5.45), stroke: 0.9pt + cb, mark: (end: ">", fill: cb))
+  line((-2.2, -4.5), (0.8, -5.5), stroke: 0.9pt + cb, mark: (end: ">", fill: cb))
+  content((-2.4, -0.9), text(size: 8pt, fill: cb)[否])
+  content((2.4, -0.9), text(size: 8pt, fill: cb)[是])
+  content((-5.6, -2.9), text(size: 8pt, fill: cb)[是])
+  content((-2.9, -2.9), text(size: 8pt, fill: cb)[否])
+  content((2.9, -2.9), text(size: 8pt, fill: cb)[否])
+  content((5.6, -2.9), text(size: 8pt, fill: cb)[是])
+  content((-3.1, -4.9), text(size: 8pt, fill: cb)[是])
+  content((-0.5, -4.9), text(size: 8pt, fill: cb)[否])
 }))
+
+树的用法走一遍：方程含分数阶导数、又要求随时间演化的解，走右路到底，
+选 BO-fPINN；分数阶但只关心稳态或参数定值，选 MC-PINN。
+方程是整数阶时走左路：解随时间演化选 NN-DO/BO；不随时间演化时，
+再看你要的是逐点密度还是统计量，要密度或空间维数高选 NFF 或 sPI-GeM，
+低维且只要统计量选 NN-aPC。
+
+这张树只覆盖“单选一个方法”的情形。两个方向可以组合：
+先用 NN-aPC 或 NFF 处理低维部分，再用 MC-PINN 处理分数阶项；
+树给的是起点，不是边界。
 
 == 与不确定性量化方向的接口
 

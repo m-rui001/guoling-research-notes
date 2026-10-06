@@ -41,12 +41,55 @@ $ psi^i_(k, n)(x^i) = sqrt(n lambda^i_n (x^i)) phi^i_k (x^i) , $
 ]
 
 #proof[
-  由 Gauss 求积的精确性（$n$ 点法则对次数 $<= 2n - 1$ 的多项式精确）：
+  按定义把离散内积摆出来：$psi^i_(j, n)(z^i_p) psi^i_(k, n)(z^i_p)
+  = n lambda^i_n (z^i_p) phi^i_j (z^i_p) phi^i_k (z^i_p)$，于是
 
-  $ 1/n sum_(p=1)^n n lambda^i_n (z^i_p) phi^i_j (z^i_p) phi^i_k (z^i_p) = sum_(p=1)^n w^i_p phi^i_j (z^i_p) phi^i_k (z^i_p) = integral phi^i_j phi^i_k rho^i = delta_(j, k) . $
+  $ 1/n sum_(p=1)^n psi^i_(j, n)(z^i_p) psi^i_(k, n)(z^i_p)
+    = 1/n sum_(p=1)^n n lambda^i_n (z^i_p) phi^i_j (z^i_p) phi^i_k (z^i_p) . $
 
-  第一步把 $n lambda_n$（Christoffel 权重）搬进取权和后恰好等于求积权；
-  第二步用求积精确性换成连续积分；第三步用基的正交性。多元版由乘积结构直接张开。$square$
+  下面把这行一步步变成 $delta_(j, k)$。
+
+  *第一步（消去因子）。* 求和号外的 $1\/n$ 与每个被加项里的 $n$ 相消：
+
+  $ 1/n sum_(p=1)^n n lambda^i_n (z^i_p) phi^i_j (z^i_p) phi^i_k (z^i_p)
+    = sum_(p=1)^n lambda^i_n (z^i_p) phi^i_j (z^i_p) phi^i_k (z^i_p) . $
+
+  *第二步（Christoffel 函数换成求积权）。* 预备章的引理“Gauss 权与
+  Christoffel 函数”说：测度归一时，$n$ 点 Gauss 节点上的求积权等于
+  用 $n$ 个基函数定义的 Christoffel 函数。这里的 $lambda^i_n$ 恰好用
+  $phi^i_0, dots, phi^i_(n-1)$ 这 $n$ 个基定义，节点 $z^i_p$ 恰是
+  $n$ 点 Gauss 节点，两个条件都对上，所以
+  $lambda^i_n (z^i_p) = w^i_p$：
+
+  $ sum_(p=1)^n lambda^i_n (z^i_p) phi^i_j (z^i_p) phi^i_k (z^i_p)
+    = sum_(p=1)^n w^i_p phi^i_j (z^i_p) phi^i_k (z^i_p) . $
+
+  这一步的适用条件要核对两点：采样点必须是 Gauss 节点（引理只对节点成立），
+  测度必须归一（否则差一个总质量因子）。
+
+  *第三步（求积换成积分）。* $phi^i_j phi^i_k$ 的次数不超过
+  $(n - 1) + (n - 1) = 2n - 2$，落在 $n$ 点 Gauss 法则的精确范围
+  $<= 2n - 1$ 内，所以和式等于连续积分：
+
+  $ sum_(p=1)^n w^i_p phi^i_j (z^i_p) phi^i_k (z^i_p)
+    = integral phi^i_j phi^i_k rho^i . $
+
+  *第四步（用基的正交性）。* $phi^i_k$ 关于 $rho^i$ 正交归一，右端就是
+  $delta_(j, k)$。四步连起来即所要的等式。
+
+  多元版本：$psi_(bold(k), bold(n))(z) = product_i psi^i_(k_i, n_i)(z^i)$
+  在张量积离散测度 $nu_(bold(n)) = times_i nu^i_n$ 下的内积按维分解成
+  一元内积的乘积，每个因子是上面的 $delta_(j, k)$，只有全部维度
+  指标都相同时乘积才为 1，故 $psi_(bold(k), bold(n))$ 在 $nu_(bold(n))$
+  下同样正交归一。$square$
+]
+
+#insight("用日常语言读一遍")[
+  这几步合起来只做一件事：把“连续测度下正交”这个资格复制到
+  “网格上等权抽样”的离散内积下。翻译官是 Christoffel 函数：
+  它在 Gauss 节点上的取值恰好等于求积权，于是“多项式乘
+  $sqrt(n lambda_n)$”在网格上的平均等于“多项式乘求积权的平方根”
+  在连续测度下的平均，正交性原样过河。后面一切 RIP 论证都站在这条引理上。
 ]
 
 这个引理是全篇的引擎：它说明“带权多项式在离散测度下构成一个正交系统”，
@@ -90,11 +133,26 @@ $ psi^i_(k, n)(x^i) = sqrt(n lambda^i_n (x^i)) phi^i_k (x^i) , $
   $sup abs(psi_(k, n))^2 <= C(alpha) n^(2\/3)$（Jacobi 情形右端是常数：
   有界区间上 Christoffel 权重恰好抵消端点的多项式增长）。
   *第三步，矩阵级。* 满 DOM 矩阵 $bold(A)$（$(A)_(p, q) = sqrt(w_(bold(l)(p))) phi_(bold(k)(q))(bold(z)_(bold(l)(p)))$）
-  是正交矩阵；逐项估计
+  是正交矩阵（第二步的引理张量化后的矩阵形式）。逐项估计每个元素的
+  大小。先代入元素定义：多元基取乘积，所以矩阵元素按维分解为
 
-  $ (product_(i=1)^d sqrt(n_i)) abs(A_(p, q)) = product_(i=1)^d abs(psi_(dot, n_i)) <= product_(i=1)^d sqrt(L_i (n_i)) = sqrt(L(bold(n))) , $
+  $ abs(A_(p, q)) = product_(i=1)^d abs(sqrt(w^i_(l_i (p))) phi^i_(k_i (q))(z^i_(l_i (p)))) , $
 
-  再引用“正交矩阵无放回行子采样仍保持 RIP”的结果完成。$square$
+  再在每一维上乘进 $sqrt(n_i)$，并逐维套用第一步的恒等式
+  $lambda^i_n (z^i_p) = w^i_p$（Gauss 节点上 Christoffel 函数等于求积权）：
+
+  $ (product_(i=1)^d sqrt(n_i)) abs(A_(p, q))
+    = product_(i=1)^d sqrt(n_i w^i_(l_i (p))) abs(phi^i_(k_i (q))(z^i_(l_i (p))))
+    = product_(i=1)^d abs(psi^i_(k_i (q), n_i)(z^i_(l_i (p)))) , $
+
+  最后一个等号就是 $psi$ 的定义 $psi = sqrt(n lambda) phi$（求积权换成
+  Christoffel 函数后与定义式逐字相同）。于是第一步的逐点界
+  $sup abs(psi)^2 <= L_i (n_i)$ 对每个因子适用：
+
+  $ product_(i=1)^d abs(psi_(dot, n_i)) <= product_(i=1)^d sqrt(L_i (n_i)) = sqrt(product_(i=1)^d L_i (n_i)) = sqrt(L(bold(n))) . $
+
+  矩阵每个元素都被 $sqrt(L(bold(n)) \/ product_i sqrt(n_i))$ 压住，再引用
+  “正交矩阵无放回行子采样仍保持 RIP”的结果完成。$square$
 ]
 
 #figure(
@@ -106,8 +164,9 @@ $ psi^i_(k, n)(x^i) = sqrt(n lambda^i_n (x^i)) phi^i_k (x^i) , $
 )
 
 #warn([无界分布的 $n^(2\/3)$ 是本质的])[
-  Hermite（高斯输入）情形 $L_i tilde n^(2\/3)$ 不是技术瑕疵：子采样分析策略下
-  它已经是这种分析策略下的下确界（sharp），不是技术瑕疵。直觉：无界域上 Gauss 节点越跑越远，
+  Hermite（高斯输入）情形 $L_i tilde n^(2\/3)$ 在子采样分析策略下
+  已经是这种策略的下确界（sharp），不是可以靠更细的估计抹掉的技术瑕疵。
+  直觉：无界域上 Gauss 节点越跑越远，
   Christoffel 权重在尾部的增长赶不上多项式的增长。数值实验也确认：
   $d = 10$ 时按原密度随机采样（$L$ 型分析不适用）反而更好。
   这提示“采样测度与多项式系统要配套”，也是后来 induced sampling（第 14 章）的动机之一。
@@ -165,15 +224,53 @@ $A_N^F = arg max abs(det bold(V))$（行列式最大 = 插值意义下张得最�
 ]
 
 #proof[
-  对每个加权行 $bold(psi)(y_j) = (psi_1(y_j)\/sqrt(K), dots)$ 有恒等式
-  $norm(bold(psi)(y_j))_2 = 1$（定义直接验证：分母就是行自身的平方和）。
-  由 Hadamard 不等式 $abs(det bold(A)) <= product_i norm(bold(a)_i)_2$ 且各行范数全是 1，
-  所以 $abs(det bold(V)) <= 1$，等号当且仅当各行两两正交，
-  即 $bold(V)$ 是正交矩阵、条件数 $kappa = 1$。
-  贪心部分用归纳：$V^T$ 的 QR 分解给出
-  $abs(det(V V^T)) = r^2$，$r = sqrt(1 - norm(bold(b))_2^2) <= 1$，
-  等号当且仅当新点与已有的加权向量正交；只要最优集中的点可被贪心逐个达成
-  （每次选到与已选集合正交的点），贪心分支就收敛到全局最优。$square$
+  记加权行 $bold(psi)(y_j) = (psi_alpha (y_j) \/ sqrt(K_Lambda (y_j)))_(alpha in Lambda)$，
+  即第 $j$ 个采样点上全体基函数取值除以同一个数 $sqrt(K_Lambda (y_j))$。
+
+  *第一步（每行长度恒为 1）。* 算行向量的平方长度，把定义
+  $K_Lambda (y) = sum_(alpha in Lambda) psi_alpha^2 (y)$ 用在分子上：
+
+  $ norm(bold(psi)(y_j))_2^2
+    = sum_(alpha in Lambda) ((psi_alpha (y_j))^2)/(K_Lambda (y_j))
+    = (K_Lambda (y_j))/(K_Lambda (y_j)) = 1 . $
+
+  合法性：每个分量除的是同一个标量，可以提到求和号外；分子恰好就是
+  分母的定义式，所以不涉及任何不等式，是恒等式。
+
+  *第二步（行列式的上界）。* Hadamard 不等式说：方阵的行列式绝对值
+  不超过各行长度的乘积，$abs(det bold(V)) <= product_j norm(bold(psi)(y_j))_2$。
+  第一步给出行长度全是 1，于是
+
+  $ abs(det bold(V)(A_N, Q)) <= product_j 1 = 1 . $
+
+  Hadamard 不等式对所有方阵成立，这里不需要矩阵有任何特殊结构。
+
+  *第三步（等号条件翻译成条件数）。* Hadamard 不等式取等号当且仅当
+  各行两两正交。行长度为 1 且两两正交意味着 $bold(V) bold(V)^T = bold(I)$，
+  即 $bold(V)$ 是正交矩阵；正交矩阵的全部奇异值都是 1，于是
+  $kappa(bold(V)) = 1$（条件数的理论下界，第 0 章的条件数定义）。
+  这就证明了 $abs(det bold(V)) = 1$ 与 $kappa = 1$ 同时成立、互为等价。
+
+  *第四步（贪心增量）。* 设已选 $n$ 个点，候选新点 $y$ 对应加权行
+  $bold(psi)(y)$。对已选行的转置做 QR 分解，新行分解成
+  “已选行空间内的投影 + 垂直分量”，垂直分量的长度平方记
+  $1 - norm(bold(b))_2^2$（行总长为 1，投影吃掉 $norm(bold(b))_2^2$）。
+  行列式按 QR 的上三角因子累乘，得到乘法更新
+
+  $ abs(det(V_(n+1) V_(n+1)^T))
+    = abs(det(V_n V_n^T)) dot (1 - norm(bold(b))_2^2) <= abs(det(V_n V_n^T)) , $
+
+  等号当且仅当 $norm(bold(b))_2 = 0$，即新点的加权行与已选行全部正交。
+  这条更新律说明：只要每一步都存在与已选集合正交的候选点
+  （最优集中的点按构造可以逐个这样达成），沿这条分支贪心的
+  行列式增量恒取最大值，贪心解就是全局最优解。$square$
+]
+
+#insight("用日常语言读一遍")[
+  这段证明把两个优化目标接在一起：Hadamard 不等式把“行列式最大”
+  翻译成“行两两正交”，而行正交恰好就是矩阵正交、条件数为 1。
+  于是“选行列式最大的点”与“选条件数最好的点”在加权之后
+  变成同一件事，贪心算法只要每步保住正交性，就不会掉出全局最优。
 ]
 
 一维情形的结构可以完全写出来。

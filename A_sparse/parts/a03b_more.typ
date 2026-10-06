@@ -57,19 +57,41 @@ $f_2 = e^(-0.6 x_1 - 0.6 x_2)$，$d = 2$）：小 $M$ 时各方法差距不明�
 *第一步：最优集的结构。* 对任意不在 $phi_(N-1)$ 零点集内的
 参数 $y$，定义比值
 
-$ r_N (y) = phi_N (y) / phi_(N-1)(y) , $
+$ r_N (y) = (phi_N (y)) / (phi_(N-1)(y)) , $
 
 最优集是水平集 $A_N (y) = r_N^(-1)(r_N (y))$：$N$ 个点 $z$ 满足
 $r_N (z) = r_N (y)$。直观：$r_N$ 是“下一基函数的预测比值”，
 让所有点共享同一个比值的配置使 Gram 矩阵最平衡。
 
 *第二步：行正交性。* 加权行 $bold(psi)(z) = (phi_j (z) \/ sqrt(K_Lambda (z)))_(j=0)^(N-1)$
-的两两内积由 #term("Christoffel–Darboux 恒等式", [预备章提到的核函数恒等式，
-把 $sum_j phi_j (x) phi_j (y)$ 化成 $phi_N phi_(N-1)$ 的差商]) 化为
+的两两内积分三小步算出。
 
-$ bold(psi)^T (z_j) bold(psi)(z_k) prop (r_N (z_j) - r_N (z_k)) / (z_j - z_k) , $
+*2a. 先写 Christoffel–Darboux 恒等式。* #term("Christoffel–Darboux 恒等式", [预备章提到的核函数恒等式，
+把 $sum_j phi_j (x) phi_j (y)$ 化成 $phi_N phi_(N-1)$ 的差商]) 说：核函数可以收成相邻两个多项式的差商
 
-于是 $r_N (z_j) = r_N (z_k)$（$j != k$）当且仅当行正交。
+$ sum_(j=0)^(N-1) phi_j (x) phi_j (y) = C dot (phi_N (x) phi_(N-1)(y) - phi_(N-1)(x) phi_N (y)) / (x - y) , $
+
+其中 $C$ 是只依赖递推系数的正常数（由三项递推的 $b_j$ 组成）。
+适用条件：$x != y$；$x = y$ 时右端按差商的极限理解，取正值。
+
+*2b. 把分子拆成比值函数的差。* 按定义 $r_N (z) = phi_N (z) \/ phi_(N-1)(z)$，
+通分相减：
+
+$ phi_N (x) phi_(N-1)(y) - phi_(N-1)(x) phi_N (y)
+  = phi_(N-1)(x) phi_(N-1)(y) dot (r_N (x) - r_N (y)) , $
+
+就是把分子两项同提出公因子 $phi_(N-1)(x) phi_(N-1)(y)$，纯粹的恒等变形。
+
+*2c. 合并。* 加权行的内积是未加权核除以两个 $sqrt(K_Lambda)$：
+
+$ bold(psi)^T (x) bold(psi)(y)
+  = (C phi_(N-1)(x) phi_(N-1)(y)) / (sqrt(K_Lambda (x)) sqrt(K_Lambda (y)))
+    dot (r_N (x) - r_N (y)) / (x - y) prop (r_N (x) - r_N (y)) / (x - y) . $
+
+前面的比例因子里 $C$、$phi_(N-1)(x) phi_(N-1)(y)$、$sqrt(K_Lambda (x) K_Lambda (y))$
+全都恒正（Christoffel 函数是平方和的倒数，处处为正），所以内积的
+符号与零点完全由差商 $(r_N (x) - r_N (y)) \/ (x - y)$ 决定。于是
+$r_N (z_j) = r_N (z_k)$（$j != k$）当且仅当行正交。
 水平集构造让所有 $r_N (z_k)$ 相等，正交性成立，行列式达到上界 1
 （Hadamard 论证，主章节已给）。
 
@@ -81,7 +103,7 @@ $1\/K_Lambda (z_k)$ 恰好构成对次数 $<= 2N - 2$ 多项式精确的
 $phi_N$ 的零点集，正是 $N$ 点 Gauss 节点。
 
 这条推导的解释力在于：*一维情形贪心点列的极限是 Gauss 求积节点*
-不是巧合，而是“行列式最优 $=>$ 正交 $=>$ 求积”三件事的等价链。
+有一条完整的等价链撑着：“行列式最优 $=>$ 行两两正交 $=>$ 求积法则”。
 高维没有这个唯一性（Gauss 求积张量积不再是唯一最优集），
 所以定理只在一维给出完整等式，高维只有不等式（贪心 $<=$ 全局最优）。
 

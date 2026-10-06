@@ -84,8 +84,8 @@ $a_i (t)$ 是标量振幅，吸收 $u_i$ 与 $Y_i$ 各自的尺度。
   align(center, image("../fig_b/b2_bur_do_ai.png", width: 80%)),
   caption: [特征值交叉的实拍（论文 1905.01205，随机 Burgers 方程长时间积分）。
   图中 $a_1(t)$ 与 $a_2(t)$ 的曲线在时域内多次相撞：方差第一的模态和方差第二的
-  模态互换身份。经典 BO 方法在每个交叉点都需要特殊处理，
-  这正是 NN 版本要绕开的东西。],
+模态互换身份。经典 BO 方法在每个交叉点都需要特殊处理，
+NN 版本要绕开的就是这个。],
 )
 
 == 关键思想：把约束隐式写进损失
@@ -101,11 +101,51 @@ $partial_t u = cal(N)_x[u]$（把非齐次项收进 $cal(N)_x$）。
 
 $ E[partial_t u] = partial_t overline(u) = E[cal(N)_x[u]] . $
 
-*第二步*：两边与 $u_i$ 做物理空间内积 $⟨dot, u_i⟩$。
+为什么左边能这样写：期望是对随机变量 $omega$ 的积分（固定 $(x, t)$，
+$u$ 是一个随机变量，第 0 章），而 $u$ 对 $t$ 光滑、积分域不随 $t$ 变，
+含参变量积分的求导定理允许交换求导与积分，所以
+$E[partial_t u] = partial_t E[u] = partial_t overline(u)$。右边 $cal(N)_x$ 只作用在
+$x$ 上，与期望同样可交换。注意 $cal(N)_x$ 非线性时
+$E[cal(N)_x[u]] != cal(N)_x[overline(u)]$：均值方程的右端仍然依赖完整的 $u$，
+这一条不是把方程平均一下就完事。
 
-*第三步*：两边与 $Y_i$ 做概率空间内积 $E[dot Y_i]$。
+*第二步*：把残差 $R := partial_t u - cal(N)_x[u]$ 与每个空间基函数做内积，
+要求投影为零：
 
-*第四步*：把截断展开 $u_N = overline(u) + sum_i a_i u_i Y_i$ 代入，用 DO 或 BO 条件化简。
+$ ⟨R, u_i⟩ = 0, quad i = 1, ..., N. $
+
+*第三步*：同一残差与每个随机基函数做概率内积，同样要求投影为零：
+
+$ E[R dot(Y)_i] = E[partial_t u dot(Y)_i] - E[cal(N)_x[u] dot(Y)_i] = 0, quad i = 1, ..., N. $
+
+*第四步*：把截断展开 $u_N = overline(u) + sum_i a_i u_i Y_i$ 代入，
+用 DO 或 BO 条件检查每一项的去留。以均值方程为例，把展开代入
+$partial_t$ 并取期望（求导逐项进行，期望的线性允许逐项取）：
+
+$ E[partial_t u_N] = partial_t overline(u) + sum_(i=1)^N [ a_i' u_i E[Y_i] + a_i (partial_t u_i) E[Y_i] + a_i u_i E[partial_t Y_i] ] . $
+
+逐项看后三个成分的去留。前两项含因子 $E[Y_i]$，正交约束要求零均值，
+两项消失。第三项用乘积法则改写：
+$E[partial_t Y_i] = E[1\/2 partial_t (Y_i^2)] = 1\/2 partial_t E[Y_i^2] = 0$
+（第一处是 $Y_i partial_t Y_i = 1\/2 partial_t (Y_i^2)$；第二处交换求导与期望，
+理由同第一步；第三处用 $E[Y_i^2] = 1$ 不随 $t$ 变）。所以
+
+$ E[partial_t u_N] = partial_t overline(u) , $
+
+代回第一步的方程，均值方程成立且与涨落解耦。第二、三步的投影
+经过同样的代入给出 $Y_i$ 与 $u_i$ 的演化方程（前面的命题）；
+NN 版本不需要把它们解出来：下一节的损失直接惩罚投影残差
+$epsilon_2, epsilon_3$，正交约束损失负责保证上面用到的
+$E[Y_i] = 0$、$E[Y_i^2] = 1$ 这些条件在训练终点成立。
+
+#insight("用日常语言读一遍")[
+  第一步把均值的行为单独拿出来：随机性在取期望时被平均掉，
+  均值服从一个自己的方程。第二、三步把剩下的涨落分别按空间形状
+  $u_i$ 和随机方向 $Y_i$ 登记：残差在这两组基上的投影都必须为零，
+  涨落才无处藏身。第四步是记账检查：把展开式逐项过一遍，
+  正交条件保证不属于均值的部分在取期望时自动消失。
+  三条投影加上正交约束，展开式的每个成分各有一条自己的方程或损失项。
+]
 
 #insight("为什么这三条投影就是弱形式")[
   $u_i (x, t)$ 构成物理子空间 $V_S$ 的基，$Y_i (t, omega)$ 构成随机子空间
@@ -147,8 +187,22 @@ $ epsilon_3^(k s) := E[ (partial_t u_(n n) - cal(N)_x[u_(n n)]) Y_(n n, i)(t_c^s
 
 $ "MSE"_"BO" = 1/(N n_t) sum_(i, s) (E[Y_i])^2 + 1/(N^2 n_t) sum_(i, j, s) (⟨dot(U)_i, U_j⟩ + ⟨dot(U)_j, U_i⟩)^2 + 1/(N n_t) sum_(i, j, s) (E[Y_i dot(Y)_j] + E[Y_j dot(Y)_i])^2 . $
 
-逐项读：第一项惩罚 $E[Y_i] = 0$（随机模态零均值）；第二项惩罚空间模态的 Gram 矩阵
-是对称对角的；第三项惩罚随机模态的自相关矩阵是对称单位阵。
+逐项读：第一项惩罚 $E[Y_i] = 0$（随机模态零均值）；第二项惩罚空间模态的
+Gram 矩阵 $⟨U_i, U_j⟩$ 随时间的偏移；第三项惩罚随机模态的自相关矩阵
+$E[Y_i Y_j]$ 随时间的偏移。后两项为什么要写成对称化的组合，值得停下来看。
+Gram 矩阵的时间导数由内积的乘积法则给出：
+
+$ partial_t ⟨U_i, U_j⟩ = ⟨partial_t U_i, U_j⟩ + ⟨U_i, partial_t U_j⟩ = ⟨partial_t U_i, U_j⟩ + ⟨partial_t U_j, U_i⟩ , $
+
+最后一步是内积的对称性。BO 要求 $⟨u_i, u_j⟩ = lambda_i delta_(i j)$ 在所有时刻
+成立，等价于它的时间导数为零，而导数恰好就是这个对称化组合。
+单独一项 $⟨partial_t U_i, U_j⟩$ 里的反对称部分
+（$⟨partial_t U_i, U_j⟩ = -⟨partial_t U_j, U_i⟩$ 的成分）在两个槽位里相消，
+不改变 Gram 矩阵，损失不必惩罚它。第三项同理：
+$E[Y_i partial_t Y_j] + E[Y_j partial_t Y_i] = partial_t E[Y_i Y_j]$
+（乘积法则加期望的线性），BO 要求自相关矩阵恒为 $bold(I)$，
+即其导数为零。$i = j$ 的对角项给出归一化的维持：
+$2⟨partial_t U_i, U_i⟩ = partial_t ⟨U_i, U_i⟩ = 0$。
 这些量全部用 mini-batch 里的样本平均来估计，因此整个损失可微。
 
 总损失是四块的加权和：

@@ -47,8 +47,26 @@ $ cal(L)_"IB" = I(Z; Y) - beta I(tilde(Z); tilde(X)) , $
 
 “加温分布”如何实现？用 *GIN*（General Incompressible-flow Networks，
 保体积的 normalizing flow）：它类似 RealNVP 但雅可比行列式恒为 1，
-于是变换不改变密度值，只改变密度的*位置*；把可训练参数 $W$ 缩放为
+于是变换不改变密度值，只改变密度的*位置*。把可训练参数 $W$ 缩放为
 $sqrt(tau) W$，就得到密度 $p_V (v)^(1\/tau)$ 的精确采样器。
+“$1\/tau$ 次幂”从哪来，三步说清：
+
++ *密度换算没有雅可比因子。* 设 $v = g(x)$ 是 GIN 的变换。
+  一般的 flow 换密度要乘 $|det partial g \/ partial x|$；
+  GIN 的行列式恒为 1，所以 $p(x) = p_V (g(x))$：密度值沿着变换原样搬运
+  （第 0 章 §0.9 的换算公式取雅可比因子为 1 的特例）。
++ *取幂等于除指数。* 若基分布是高斯，$p_V (u) prop exp(-norm(u)^2 \/ 2)$，
+  则 $p_V (u)^(1\/tau) prop exp(-norm(u)^2 \/ (2 tau))$：
+  密度取 $1\/tau$ 次幂，就是把指数上的能量除以 $tau$。
++ *除以 $tau$ 等于放大方差。* $exp(-norm(u)^2 \/ (2 tau))$
+  作为 $u$ 的函数正比于 $cal(N)(0, tau bold(I))$ 的密度。
+  所以采样程序是：抽 $v tilde cal(N)(0, tau bold(I))$
+  （等价于抽标准高斯再乘 $sqrt(tau)$，第 0 章 §0.5 的线性变换封闭性），
+  令 $x = g^(-1)(v)$。换回 $x$ 的密度时本应再乘雅可比因子，
+  但它是 1，于是 $x$ 的密度恰为 $exp(-norm(g(x))^2 \/ (2 tau)) prop p(x)^(1\/tau)$。
+
+第三步里"再乘雅可比因子"这一处正是普通 flow 做不到的地方：
+行列式不是 1 时会多出一个无法吸收的因子，加温就不再精确。
 
 == 改造二：置信度混合编码器
 
@@ -57,6 +75,14 @@ $sqrt(tau) W$，就得到密度 $p_V (v)^(1\/tau)$ 的精确采样器。
 $ z = "diag"(m(x)) overline(z)(x) + "diag"(bold(1) - m(x)) z_0, quad z_0 tilde cal(N)(0, I) , $
 
 $m(x), overline(z)(x)$ 都是神经网络，$m(x) in [0, 1]^d$ 是逐维置信度。
+这两个量为什么能当"门"用，看一下 $z | x$ 的分布：固定 $x$ 后
+$m(x)$ 与 $overline(z)(x)$ 是确定的数与向量，$z$ 是先验噪声 $z_0$
+的仿射变换，由第 0 章 §0.5 的线性变换封闭性，$z | x$ 仍是高斯：
+均值是 $m(x) overline(z)(x)$（噪声项均值为 0），
+协方差是 $"diag"(bold(1) - m(x)) dot "diag"(bold(1) - m(x)) = "diag"((1 - m(x))^2)$
+（对角矩阵相乘就是对角元相乘）。于是
+$op("Var")(z_i | x) = (1 - m_i (x))^2$：
+门控的每个分量直接就是该维潜变量的方差参数。
 两个极端：$m = bold(1)$（训练数据附近）时 $z$ 是确定性特征 $overline(z)(x)$；
 $m = bold(0)$（OOD）时 $z$ 退化为纯噪声 $z_0$，编码器不再携带任何输入信息。
 解码器是条件高斯 $q_D (y | z) = cal(N)(mu_D (z), Sigma_D (z))$，
@@ -77,31 +103,65 @@ IB 目标里的两个互信息都算不出，各用一个变分量替换。记�
 $q_E (z | x)$ 是编码器，$q_D (y | z)$ 是解码器，$e(z)$ 是任取的边际密度代理
 （实现里用一个 RealNVP flow）。
 
-*第一项：$I(Z; Y)$ 的下界。* 从互信息的定义出发：
+*第一项：$I(Z; Y)$ 的下界。* 记号先说清：联合分布由模型与数据分布给出，
+$p(y, z) = integral p(y | x) q_E (z | x) p(x) d x$
+（从数据分布抽 $x$、编码得 $z$、解码出 $y$，三步合成的联合），
+推导只用到它的两个边缘 $p(y)$ 与 $p(z)$，以及条件分布 $p(y | z)$。
+从互信息的定义 $I(Z; Y) = E_(p(y, z))[log(p(y, z) \/ (p(y) p(z)))]$ 出发
+（第 0 章 §0.4 的定义式按连续情形积分改写）：
 
-$ I(Z; Y) &= E_(p(y, z))[log p(y | z)] - E_(p(y))[log p(y)] \
-  &= E_(p(y, z))[log q_D (y | z)] + E_(p(z))[op("KL")(p(y | z) ‖ q_D (y | z))] + cal(H)(Y) . $
+*第一步：拆成两个条件对数。* 分子分母同除 $p(z)$，
+$p(y, z) \/ (p(y) p(z)) = p(y | z) \/ p(y)$，于是
 
-第一步按定义拆成期望对数比；第二步用贝叶斯公式把 $log p(y|z)$ 写成
-$log q_D (y|z)$ 加上一个 KL（推导：$log p \/ q_D = log p + log(p \/ q_D)$，
-对 $p(y, z)$ 取期望后第二项正是以 $z$ 为条件的 KL 期望，第三步归并出
-常数熵 $cal(H)(Y)$）。由 KL 非负：
+$ I(Z; Y) = E_(p(y, z))[log p(y | z)] - E_(p(y, z))[log p(y)] . $
+
+*第二步：把第二个期望里的 $z$ 积掉。* $log p(y)$ 不含 $z$，
+对联合分布取期望可以先对 $z$ 积分：
+$E_(p(y, z))[log p(y)] = E_(p(y))[log p(y)]$，
+按熵的定义（第 0 章 §0.4）它等于 $-cal(H)(Y)$。
+
+*第三步：把 $log p(y | z)$ 拆成解码器加比值。*
+$log p(y | z) = log q_D (y | z) + log(p(y | z) \/ q_D (y | z))$
+（右端展开时 $log q_D$ 一正一负抵消）。取期望时第二项在固定 $z$ 下
+对 $y$ 的平均恰是 $op("KL")(p(y | z) ‖ q_D (y | z))$（KL 的定义），
+再对 $z$ 取平均：
+
+$ I(Z; Y) &= E_(p(y, z))[log q_D (y | z)] + E_(p(z))[op("KL")(p(y | z) ‖ q_D (y | z))] + cal(H)(Y) . $
+
+*第四步：取下界。* 中间一项是 KL 的期望，KL 非负（第 0 章 §0.4 的性质二），
+扔掉它不等号朝"低估相关性"的方向走：
 
 $ I(Z; Y) - cal(H)(Y) >= hat(I(Z; Y)) = E_(p(y, z))[log q_D (y | z)] , $
 
-等号当且仅当 $q_D (y | z) = p(y | z)$。*最大化解码似然就是在最大化
+等号当且仅当每个 $z$ 处 $q_D (y | z) = p(y | z)$
+（KL 为零当且仅当两个分布相同）。*最大化解码似然就是在最大化
 相关性的下界*。
 
 *第二项：$I(tilde(Z); tilde(X))$ 的上界。*
+这里的联合分布由编码器自己定义：
+$tilde(p)(tilde(x), tilde(z)) = tilde(p)(tilde(x)) q_E (tilde(z) | tilde(x))$
+（抽一个加温输入，编码器给它一个随机表示），
+所以条件分布 $tilde(p)(tilde(z) | tilde(x))$ 就是 $q_E$ 本身。互信息为
 
-$ I(tilde(Z); tilde(X)) = E_(tilde(p)(tilde(x), tilde(z)))[log q_E (tilde(z) | tilde(x))] - E_(tilde(p)(tilde(z)))[log tilde(p)(tilde(z))] = E[log q_E] - E[log e(tilde(z))] - op("KL")(tilde(p)(tilde(z)) ‖ e(tilde(z))) , $
+$ I(tilde(Z); tilde(X)) = E_(tilde(p)(tilde(x), tilde(z)))[log q_E (tilde(z) | tilde(x))] - E_(tilde(p)(tilde(z)))[log tilde(p)(tilde(z))] , $
 
-推导：$log tilde(p) = log e + log(tilde(p) \/ e)$，对 $tilde(p)$ 取期望后
-第二项正是 KL。由 KL 非负：
+第一项与上一项的第一步同形；第二项里的边缘 $tilde(p)(tilde(z))$
+是编码器输出在加温分布上的真实边缘，要对 $tilde(x)$ 积分，算不出。
+
+*第一步：插入代理边缘。* 把 $log tilde(p)(tilde(z))$ 拆成
+$log e(tilde(z)) + log(tilde(p)(tilde(z)) \/ e(tilde(z)))$
+（展开时 $log e$ 一正一负抵消），代入：
+
+$ I(tilde(Z); tilde(X)) &= E[log q_E] - E_(tilde(p)(tilde(z)))[log e(tilde(z))] \
+  &quad - E_(tilde(p)(tilde(z)))[log(tilde(p)(tilde(z)) \/ e(tilde(z)))] . $
+
+*第二步：认出 KL 并取上界。* 第三个期望按定义是
+$op("KL")(tilde(p)(tilde(z)) ‖ e(tilde(z)))$，KL 非负，
+扔掉它不等号朝"高估压缩项"的方向走：
 
 $ I(tilde(Z); tilde(X)) <= hat(I(tilde(Z); tilde(X))) = E_(tilde(p))[log q_E (tilde(z) | tilde(x)) - log e(tilde(z))] , $
 
-等号当且仅当 $e(tilde(z)) = tilde(p)(tilde(z))$。*最小化“编码器对宽分布样本的
+等号当且仅当 $e(tilde(z)) = tilde(p)(tilde(z))$（KL 为零）。*最小化“编码器对宽分布样本的
 编码长度减去代理边际的编码长度”就是在最小化压缩项的上界*。
 
 *合并。* 两个界都朝安全方向偏（相关性项低估、压缩项高估），得到可训练的
@@ -109,10 +169,23 @@ VIB 目标：
 
 $ cal(L)_"VIB" = E_(x, y, z)[log q_D (y | z)] - beta E_(tilde(x), tilde(z))[log q_E (tilde(z) | tilde(x))\/e(tilde(z))] <= cal(L)_"IB" - cal(H)(Y) . $
 
+为什么 $cal(H)(Y)$ 不再出现：它只由数据的边缘分布决定，
+不含 $q_D, q_E, e$ 的任何参数，对优化而言是常数，
+从目标里去掉不改变极小值点。
+
 训练算法（每步）：抽 mini-batch；可选 Mixup 平滑（$lambda tilde "Beta"(alpha, alpha)$，
 $alpha = 0.005$ 取得极小，只起平滑经验分布的作用）；
 GIN 抽 $tilde(x)$；编码得 $z, tilde(z)$；用样本平均估计上式；
 梯度上升更新 $q_D, q_E, e$ 的全部参数。
+
+#insight("用日常语言读一遍：这两条界合起来干了什么")[
+  互信息的两个项都要求知道真实的条件分布与真实的边缘分布，都算不出。
+  推导把每一项拆成"一个能算的期望"加"一个非负的 KL"：
+  第一项扔掉 KL 得到相关性的下界，第二项扔掉 KL 得到压缩的上界，
+  两个"扔掉"的方向都让目标变得保守，所以最大化这个替代目标
+  不会把模型引向高估自己的方向。训练时唯一要算的是
+  三个网络的输出对数，样本平均即可估计，这就是整个框架可以端到端训练的原因。
+]
 
 == 数据增强的理论保证
 

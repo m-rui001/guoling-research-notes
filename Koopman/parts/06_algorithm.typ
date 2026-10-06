@@ -43,7 +43,7 @@ $ I(z_t; x_t | z_(t-n)) = I(z_t; x_(t-1)|z_(t-n)) + I(z_t; x_t | x_(t-1)) . $
 
 === 为什么不能直接算
 
-$I(z_(t-n); z_t)$ 有个漂亮的闭式（命题 3a），但它在 $d$ 很大时行列式代价高，
+$I(z_(t-n); z_t)$ 有个紧凑的闭式（命题 3a），但它在 $d$ 很大时行列式代价高，
 而且当潜在是高维时数值不稳定。$I(z_t; x_t|z_(t-n))$ 更是需要条件密度。
 $S$ 需要每步做一次特征分解。
 
@@ -90,11 +90,23 @@ $ I(z_n; cal(P)_n) approx 1/abs(cal(P)_n) sum_(p in cal(P)_n) log (exp(z_n^T z_p
 ]
 
 #proof[
-  第一式由条件互信息的定义 $I(a;b|c) = H(a|c) - H(a|b,c)$ 直接得到。
-  第二式的第一等号是条件互信息的 KL 形式
-  $I(a;b|c) = EE_(p(a|c)) D_"KL"(p(a|c) \| q(a|c))$（这里 $a = z_n$，$b = x_n$，$c = z_(n-1)$，
-  $q$ 是 Koopman 先验），第二等号把 KL 展开成
-  $EE[log p] - EE[log q] = -H_(p_theta)(z_n|x_n) - EE[log q]$。$square$
+  *第一式。* 条件互信息的定义 $I(a;b|c) = H(a|c) - H(a|b,c)$（第 2 章定义 6 之前给过）
+  取 $a = z_n$、$b = x_n$、$c = z_(n-1)$，逐符号代入即得。
+
+  *第二式，第一步：写成 KL。* 条件互信息有 KL 形式：
+  $I(a;b|c) = EE_(p(b,c)) D_"KL"(p(a|b,c) ‖ q(a|c))$，
+  它度量“真实的条件分布 $p(a|b,c)$ 与先验 $q(a|c)$ 差多远”。
+  这里 $q$ 是 Koopman 先验 $q_psi(z_n|z_(n-1))$，表达式里本来就不含 $b$；
+  又由 Fact F.1，编码器只看 $x_n$，$p(z_n|x_n,z_(n-1)) = p(z_n|x_n)$。两个实参都与 $b$
+  无关，对 $b$ 的期望积掉（内层是常数）：
+
+  $ I(z_n; x_n | z_(n-1)) = EE_(p(z_n|x_n)) [ log (p(z_n|x_n))/(q_psi(z_n|z_(n-1))) ] . $
+
+  *第二式，第二步：拆对数。* 把对数拆成
+  $log p - log q = (-log q) - (-log p)$，两项分别取期望：第二项是
+  $EE[-log p_theta(z_n|x_n)] = H_(p_theta)(z_n|x_n)$（条件熵的定义），于是
+
+  $ I(z_n; x_n | z_(n-1)) = EE_(p(z_n|x_n))[ -log q_psi(z_n|z_(n-1)) ] - H_(p_theta)(z_n|x_n) . quad square $
 ]
 
 这两步的结论值得单独列出：
@@ -122,7 +134,7 @@ $ I(z_n; cal(P)_n) approx 1/abs(cal(P)_n) sum_(p in cal(P)_n) log (exp(z_n^T z_p
 
 $ p(z_n|x_n) approx q(z_n|z_(n-1)) quad <==> quad z_n "在" cal(K) "下近似线性演化" , $
 
-这正是结构一致性。
+这就是结构一致性。
 
 === 第 4 项：重构
 
@@ -169,7 +181,7 @@ $ cal(L)_"ELBO" = log p_omega(x_(n-1)|z_(n-1)) - D_"KL"( p_theta(z_(n-1)|x_(n-1)
   Algorithm 1 的总损失里没有显式写出 $beta$（等价于把它吸收进了那两项的定义）。
 
   这不是错误，只是同一件事的两种记法。但如果你要复现，必须知道：
-  *实际起作用的是两个独立的乘子，一个管 InfoNCE（$alpha$），一个管结构一致性（$beta$），
+  *实际起作用的是三个独立的乘子，一个管 InfoNCE（$alpha$），一个管结构一致性（$beta$），
   一个管熵（$gamma$）。*
 ]
 
@@ -217,7 +229,7 @@ $ cal(L)_"ELBO" = log p_omega(x_(n-1)|z_(n-1)) - D_"KL"( p_theta(z_(n-1)|x_(n-1)
   [图结构动力学], [AE], [$z_(t+1) = cal(K)(A) z_t$（邻接条件化）；重构；InfoNCE；VNE],
 )
 
-三个细节值得注意：
+三个细节：
 
 - *控制任务*里线性算子是 $cal(K) z_t + B a_t$。这是控制理论里的标准线性时不变形式，
   它能让“在潜在空间里做 LQR”变成一件合法的事，而 LQR 只有在潜在动力学线性时才成立。
@@ -260,7 +272,7 @@ $ cal(L)_"ELBO" = log p_omega(x_(n-1)|z_(n-1)) - D_"KL"( p_theta(z_(n-1)|x_(n-1)
   - Dam Flow：$18.92$ s，其中 $0.76$ s / $0.56$ s；
   - ERA5：$253.24$ s，其中 $15.09$ s / $7.43$ s。
 
-  也就是说，理论换来的收益基本是“免费”的。
+  也就是说，理论换来的收益额外付出的计算代价可以忽略。
 ]
 
 #pagebreak()
